@@ -1,14 +1,13 @@
 #include "SFZReader.h"
 #include "SFZRegion.h"
 #include "SFZSound.h"
-#include "StringSlice.h"
-#include "SFZDebug.h"
+#include <fstream>
+#include <sstream>
+#include <string_view>
 
-using namespace SFZero;
 
-
-SFZReader::SFZReader(SFZSound* soundIn)
-	: sound(soundIn), line(1)
+SFZReader::SFZReader(SFZSound* sound_in)
+	: sound(sound_in), line(1)
 {
 }
 
@@ -18,16 +17,24 @@ SFZReader::~SFZReader()
 }
 
 
-void SFZReader::read(const File& file)
+void SFZReader::read(std::string path)
 {
-	MemoryBlock contents;
-	bool ok = file.loadFileAsData(contents);
+	// Read the entire file as a string.
+	std::string contents;
+	bool ok = false;
+	if (std::ifstream file{path, std::ios::binary | std::ios::ate}) {
+		auto size = file.tellg();
+		contents = std::string(size, '\0');
+		file.seekg(0);
+		if (file.read(contents.data(), size))
+			ok = true;
+		}
 	if (!ok) {
-		sound->addError("Couldn't read \"" + file.getFullPathName() + "\"");
+		sound->add_error("Couldn't read \"" + path + "\"");
 		return;
 		}
 
-	read((const char*) contents.getData(), contents.getSize());
+	read(contents.data(), contents.size());
 }
 
 
@@ -37,11 +44,11 @@ void SFZReader::read(const char* text, unsigned int length)
 	const char* end = text + length;
 	char c;
 
-	SFZRegion curGroup;
-	SFZRegion curRegion;
-	SFZRegion* buildingRegion = NULL;
-	bool inControl = false;
-	std::string defaultPath;
+	SFZRegion cur_group;
+	SFZRegion cur_region;
+	SFZRegion* building_region = nullptr;
+	bool in_control = false;
+	std::string default_path;
 
 	while (p < end) {
 		// We're at the start of a line; skip any whitespace.
@@ -79,41 +86,41 @@ void SFZReader::read(const char* text, unsigned int length)
 			// Tag.
 			if (c == '<') {
 				p += 1;
-				const char* tagStart = p;
+				const char* tag_start = p;
 				while (p < end) {
 					c = *p++;
 					if (c == '\n' || c == '\r') {
 						error("Unterminated tag");
-						goto fatalError;
+						goto fatal_error;
 						}
 					else if (c == '>')
 						break;
 					}
 				if (p >= end) {
 					error("Unterminated tag");
-					goto fatalError;
+					goto fatal_error;
 					}
-				StringSlice tag(tagStart, p - 1);
+				std::string_view tag(tag_start, p - tag_start - 1);
 				if (tag == "region") {
-					if (buildingRegion && buildingRegion == &curRegion)
-						finish_region(&curRegion);
-					curRegion = curGroup;
-					buildingRegion = &curRegion;
-					inControl = false;
+					if (building_region && building_region == &cur_region)
+						finish_region(&cur_region);
+					cur_region = cur_group;
+					building_region = &cur_region;
+					in_control = false;
 					}
 				else if (tag == "group") {
-					if (buildingRegion && buildingRegion == &curRegion)
-						finish_region(&curRegion);
-					curGroup.clear();
-					buildingRegion = &curGroup;
-					inControl = false;
+					if (building_region && building_region == &cur_region)
+						finish_region(&cur_region);
+					cur_group.clear();
+					building_region = &cur_group;
+					in_control = false;
 					}
 				else if (tag == "control") {
-					if (buildingRegion && buildingRegion == &curRegion)
-						finish_region(&curRegion);
-					curGroup.clear();
-					buildingRegion = NULL;
-					inControl = true;
+					if (building_region && building_region == &cur_region)
+						finish_region(&cur_region);
+					cur_group.clear();
+					building_region = nullptr;
+					in_control = true;
 					}
 				else
 					error("Illegal tag");
@@ -133,7 +140,7 @@ void SFZReader::read(const char* text, unsigned int length)
 			// Parameter.
 			else {
 				// Get the parameter name.
-				const char* parameterStart = p;
+				const char* parameter_start = p;
 				while (p < end) {
 					c = *p++;
 					if (c == '=' || c == ' ' || c == '\t' || c == '\r' || c == '\n')
@@ -141,32 +148,32 @@ void SFZReader::read(const char* text, unsigned int length)
 					}
 				if (p >= end || c != '=') {
 					error("Malformed parameter");
-					goto nextElement;
+					goto next_element;
 					}
-				StringSlice opcode(parameterStart, p - 1);
-				if (inControl) {
+				std::string_view opcode(parameter_start, p - parameter_start - 1);
+				if (in_control) {
 					if (opcode == "default_path")
-						p = read_path_into(&defaultPath, p, end);
+						p = read_path_into(&default_path, p, end);
 					else {
-						const char* valueStart = p;
+						const char* value_start = p;
 						while (p < end) {
 							c = *p;
 							if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
 								break;
 							p++;
 							}
-						std::string value(valueStart, p - valueStart);
-						std::string fauxOpcode =
-							std::string(opcode.start, opcode.length()) + " (in <control>)";
-						sound->addUnsupportedOpcode(fauxOpcode);
+						std::string_view value(value_start, p - value_start);
+						std::string faux_opcode =
+							std::string(opcode.data(), opcode.size()) + " (in <control>)";
+						sound->add_unsupported_opcode(faux_opcode);
 						}
 					}
 				else if (opcode == "sample") {
 					std::string path;
 					p = read_path_into(&path, p, end);
-					if (!path.isEmpty()) {
-						if (buildingRegion)
-							buildingRegion->sample = sound->addSample(path, defaultPath);
+					if (!path.empty()) {
+						if (building_region)
+							building_region->sample = sound->add_sample(path, default_path);
 						else
 							error("Adding sample outside a group or region");
 						}
@@ -174,115 +181,115 @@ void SFZReader::read(const char* text, unsigned int length)
 						error("Empty sample path");
 					}
 				else {
-					const char* valueStart = p;
+					const char* value_start = p;
 					while (p < end) {
 						c = *p;
 						if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
 							break;
 						p++;
 						}
-					std::string value(valueStart, p - valueStart);
-					if (buildingRegion == NULL)
+					std::string value(value_start, p - value_start);
+					if (building_region == nullptr)
 						error("Setting a parameter outside a region or group");
 					else if (opcode == "lokey")
-						buildingRegion->lokey = key_value(value);
+						building_region->lokey = key_value(value);
 					else if (opcode == "hikey")
-						buildingRegion->hikey = key_value(value);
+						building_region->hikey = key_value(value);
 					else if (opcode == "key") {
-						buildingRegion->hikey =
-						buildingRegion->lokey =
-						buildingRegion->pitch_keycenter =
+						building_region->hikey =
+						building_region->lokey =
+						building_region->pitch_keycenter =
 							key_value(value);
 						}
 					else if (opcode == "lovel")
-						buildingRegion->lovel = value.getIntValue();
+						building_region->lovel = std::stol(value);
 					else if (opcode == "hivel")
-						buildingRegion->hivel = value.getIntValue();
+						building_region->hivel = std::stol(value);
 					else if (opcode == "trigger")
-						buildingRegion->trigger = (SFZRegion::Trigger) trigger_value(value);
+						building_region->trigger = (SFZRegion::Trigger) trigger_value(value);
 					else if (opcode == "group")
-						buildingRegion->group = (unsigned long) value.getLargeIntValue();
+						building_region->group = (unsigned long) std::stol(value);
 					else if (opcode == "off_by")
-						buildingRegion->off_by = (unsigned long) value.getLargeIntValue();
+						building_region->off_by = (unsigned long) std::stol(value);
 					else if (opcode == "offset")
-						buildingRegion->offset = (unsigned long) value.getLargeIntValue();
+						building_region->offset = (unsigned long) std::stol(value);
 					else if (opcode == "end") {
-						int64 end = (unsigned long) value.getLargeIntValue();
+						int64_t end = (unsigned long long) std::stoll(value);
 						if (end < 0)
-							buildingRegion->negative_end = true;
+							building_region->negative_end = true;
 						else
-							buildingRegion->end = end;
+							building_region->end = end;
 						}
 					else if (opcode == "loop_mode") {
-						bool modeIsSupported =
+						bool models_supported =
 							value == "no_loop" ||
 							value == "one_shot" ||
 							value == "loop_continuous";
-						if (modeIsSupported)
-							buildingRegion->loop_mode = (SFZRegion::LoopMode) loop_mode_value(value);
+						if (models_supported)
+							building_region->loop_mode = (SFZRegion::LoopMode) loop_mode_value(value);
 						else {
-							std::string fauxOpcode =
-								std::string(opcode.start, opcode.length()) + "=" + value;
-							sound->addUnsupportedOpcode(fauxOpcode);
+							std::string faux_opcode =
+								std::string(opcode.data(), opcode.length()) + "=" + value;
+							sound->add_unsupported_opcode(faux_opcode);
 							}
 						}
 					else if (opcode == "loop_start")
-						buildingRegion->loop_start = (unsigned long) value.getLargeIntValue();
+						building_region->loop_start = (unsigned long) std::stol(value);
 					else if (opcode == "loop_end")
-						buildingRegion->loop_end = (unsigned long) value.getLargeIntValue();
+						building_region->loop_end = (unsigned long) std::stol(value);
 					else if (opcode == "transpose")
-						buildingRegion->transpose = value.getIntValue();
+						building_region->transpose = std::stol(value);
 					else if (opcode == "tune")
-						buildingRegion->tune = value.getIntValue();
+						building_region->tune = std::stol(value);
 					else if (opcode == "pitch_keycenter")
-						buildingRegion->pitch_keycenter = key_value(value);
+						building_region->pitch_keycenter = key_value(value);
 					else if (opcode == "pitch_keytrack")
-						buildingRegion->pitch_keytrack = value.getIntValue();
+						building_region->pitch_keytrack = std::stol(value);
 					else if (opcode == "bend_up")
-						buildingRegion->bend_up = value.getIntValue();
+						building_region->bend_up = std::stol(value);
 					else if (opcode == "bend_down")
-						buildingRegion->bend_down = value.getIntValue();
+						building_region->bend_down = std::stol(value);
 					else if (opcode == "volume")
-						buildingRegion->volume = value.getFloatValue();
+						building_region->volume = std::stof(value);
 					else if (opcode == "pan")
-						buildingRegion->pan = value.getFloatValue();
+						building_region->pan = std::stof(value);
 					else if (opcode == "amp_veltrack")
-						buildingRegion->amp_veltrack = value.getFloatValue();
+						building_region->amp_veltrack = std::stof(value);
 					else if (opcode == "ampeg_delay")
-						buildingRegion->ampeg.delay = value.getFloatValue();
+						building_region->ampeg.delay = std::stof(value);
 					else if (opcode == "ampeg_start")
-						buildingRegion->ampeg.start = value.getFloatValue();
+						building_region->ampeg.start = std::stof(value);
 					else if (opcode == "ampeg_attack")
-						buildingRegion->ampeg.attack = value.getFloatValue();
+						building_region->ampeg.attack = std::stof(value);
 					else if (opcode == "ampeg_hold")
-						buildingRegion->ampeg.hold = value.getFloatValue();
+						building_region->ampeg.hold = std::stof(value);
 					else if (opcode == "ampeg_decay")
-						buildingRegion->ampeg.decay = value.getFloatValue();
+						building_region->ampeg.decay = std::stof(value);
 					else if (opcode == "ampeg_sustain")
-						buildingRegion->ampeg.sustain = value.getFloatValue();
+						building_region->ampeg.sustain = std::stof(value);
 					else if (opcode == "ampeg_release")
-						buildingRegion->ampeg.release = value.getFloatValue();
+						building_region->ampeg.release = std::stof(value);
 					else if (opcode == "ampeg_vel2delay")
-						buildingRegion->ampeg_veltrack.delay = value.getFloatValue();
+						building_region->ampeg_veltrack.delay = std::stof(value);
 					else if (opcode == "ampeg_vel2attack")
-						buildingRegion->ampeg_veltrack.attack = value.getFloatValue();
+						building_region->ampeg_veltrack.attack = std::stof(value);
 					else if (opcode == "ampeg_vel2hold")
-						buildingRegion->ampeg_veltrack.hold = value.getFloatValue();
+						building_region->ampeg_veltrack.hold = std::stof(value);
 					else if (opcode == "ampeg_vel2decay")
-						buildingRegion->ampeg_veltrack.decay = value.getFloatValue();
+						building_region->ampeg_veltrack.decay = std::stof(value);
 					else if (opcode == "ampeg_vel2sustain")
-						buildingRegion->ampeg_veltrack.sustain = value.getFloatValue();
+						building_region->ampeg_veltrack.sustain = std::stof(value);
 					else if (opcode == "ampeg_vel2release")
-						buildingRegion->ampeg_veltrack.release = value.getFloatValue();
+						building_region->ampeg_veltrack.release = std::stof(value);
 					else if (opcode == "default_path")
 						error("\"default_path\" outside of <control> tag");
 					else
-						sound->addUnsupportedOpcode(std::string(opcode.start, opcode.length()));
+						sound->add_unsupported_opcode(std::string(opcode.data(), opcode.length()));
 					}
 				}
 
 			// Skip to next element.
-nextElement:
+next_element:
 			c = 0;
 			while (p < end) {
 				c = *p;
@@ -297,17 +304,17 @@ nextElement:
 			}
 		}
 
-fatalError:
-	if (buildingRegion && buildingRegion == &curRegion)
-		finish_region(buildingRegion);
+fatal_error:
+	if (building_region && building_region == &cur_region)
+		finish_region(building_region);
 }
 
 
 const char* SFZReader::handle_line_end(const char* p)
 {
 	// Check for DOS-style line ending.
-	char lineEndChar = *p++;
-	if (lineEndChar == '\r' && *p == '\n')
+	char line_end_char = *p++;
+	if (line_end_char == '\r' && *p == '\n')
 		p += 1;
 	line += 1;
 	return p;
@@ -315,19 +322,19 @@ const char* SFZReader::handle_line_end(const char* p)
 
 
 const char* SFZReader::read_path_into(
-	std::string* pathOut, const char* pIn, const char* endIn)
+	std::string* path_out, const char* p_in, const char* end_in)
 {
 	// Paths are kind of funny to parse because they can contain whitespace.
-	const char* p = pIn;
-	const char* end = endIn;
-	const char* pathStart = p;
-	const char* potentialEnd = NULL;
+	const char* p = p_in;
+	const char* end = end_in;
+	const char* path_start = p;
+	const char* potential_end = nullptr;
 	while (p < end) {
 		char c = *p;
 		if (c == ' ') {
 			// Is this space part of the path?  Or the start of the next opcode?  We
 			// don't know yet.
-			potentialEnd = p;
+			potential_end = p;
 			p += 1;
 			// Skip any more spaces.
 			while (p < end && *p == ' ')
@@ -337,22 +344,16 @@ const char* SFZReader::read_path_into(
 			break;
 		else if (c == '=') {
 			// We've been looking at an opcode; we need to rewind to
-			// potentialEnd.
-			p = potentialEnd;
+			// potential_end.
+			p = potential_end;
 			break;
 			}
 		p += 1;
 		}
-	if (p > pathStart) {
-		// Can't do this:
-		//  	std::string path(CharPointer_UTF8(pathStart), CharPointer_UTF8(p));
-		// It won't compile for some unfathomable reason.
-		CharPointer_UTF8 end(p);
-		std::string path(CharPointer_UTF8(pathStart), end);
-		*pathOut = path;
-		}
+	if (p > path_start)
+		path_out->assign(path_start, p - path_start);
 	else
-		*pathOut = std::string::empty;
+		path_out->clear();
 	return p;
 }
 
@@ -361,7 +362,7 @@ int SFZReader::key_value(const std::string& str)
 {
 	char c = str[0];
 	if (c >= '0' && c <= '9')
-		return str.getIntValue();
+		return std::stoi(str);
 
 	int note = 0;
 	static const int notes[] = {
@@ -371,16 +372,16 @@ int SFZReader::key_value(const std::string& str)
 		note = notes[c - 'A'];
 	else if (c >= 'a' && c <= 'g')
 		note = notes[c - 'a'];
-	int octaveStart = 1;
+	int octave_start = 1;
 	c = str[1];
 	if (c == 'b' || c == '#') {
-		octaveStart += 1;
+		octave_start += 1;
 		if (c == 'b')
 			note -= 1;
 		else
 			note += 1;
 		}
-	int octave = str.substring(octaveStart).getIntValue();
+	int octave = std::stoi(str.substr(octave_start));
 	// A3 == 57.
 	int result = octave * 12 + note + (57 - 4 * 12);
 	return result;
@@ -415,17 +416,17 @@ int SFZReader::loop_mode_value(const std::string& str)
 
 void SFZReader::finish_region(SFZRegion* region)
 {
-	SFZRegion* newRegion = new SFZRegion();
-	*newRegion = *region;
-	sound->addRegion(newRegion);
+	SFZRegion* new_region = new SFZRegion();
+	*new_region = *region;
+	sound->add_region(new_region);
 }
 
 
 void SFZReader::error(const std::string& message)
 {
-	std::string fullMessage = message;
-	fullMessage += " (line " + std::string(line) + ").";
-	sound->addError(fullMessage);
+	std::ostringstream full_message;
+	full_message << message << " (line " << line << ").";
+	sound->add_error(full_message.str());
 }
 
 

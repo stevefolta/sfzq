@@ -15,7 +15,10 @@ bool SFZSample::load()
 
 	// Read some extra samples, which will be filled with zeros, so interpolation
 	// can be done without having to check for the edge all the time.
-	buffer = new SampleBuffer(reader.num_channels, num_samples + 4);
+	buffer =
+		new SampleBuffer(
+			reader.num_channels, num_samples + 4,
+			reader.bits_per_sample, SampleBuffer::Little, SampleBuffer::Planar);
 	reader.read_samples_into(0, num_samples, buffer);
 	auto num_loops = reader.num_loops();
 	if (num_loops > 0) {

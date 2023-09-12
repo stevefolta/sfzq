@@ -3,7 +3,7 @@ SOURCES := sfzq.cpp
 SOURCES += SFZQPlugin.cpp
 SFZ_DIR := SFZ
 SFZ_SOURCES += SFZRegion.cpp SFZSample.cpp
-SFZ_SOURCES += WAVReader.cpp RIFF.cpp
+SFZ_SOURCES += WAVReader.cpp SampleBuffer.cpp RIFF.cpp
 SOURCES += $(foreach source,$(SFZ_SOURCES),$(SFZ_DIR)/$(source))
 FRAMEWORK_DIR := CLAPFramework
 FRAMEWORK_SOURCES += CLAPPlugin.cpp
@@ -19,6 +19,7 @@ WIDGET_SOURCES += TimeSeconds.cpp
 SOURCES += $(foreach source,$(WIDGET_SOURCES),$(WIDGETS_DIR)/$(source))
 LIBRARIES += X11 cairo
 SUBDIRS += $(SFZ_DIR) $(FRAMEWORK_DIR) $(WIDGETS_DIR)
+CFLAGS += --no-exceptions --no-rtti
 
 OBJECTS_DIR := objects
 CFLAGS += -Wall

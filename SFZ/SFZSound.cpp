@@ -2,13 +2,12 @@
 #include "SFZRegion.h"
 #include "SFZSample.h"
 #include "SFZReader.h"
-#include "SFZDebug.h"
 #include <regex>
 #include <iostream>
 
 
 
-SFZSound::SFZSound(std::string path)
+SFZSound::SFZSound(std::string path_in)
 	: path(path_in)
 {
 }
@@ -22,7 +21,7 @@ SFZSound::~SFZSound()
 		regions[i] = nullptr;
 		}
 
-	for (auto kv&: samples)
+	for (auto& kv: samples)
 		delete kv.second;
 }
 
@@ -35,7 +34,7 @@ void SFZSound::add_region(SFZRegion* region)
 
 SFZSample* SFZSound::add_sample(std::string sample_path, std::string default_path)
 {
-	std::regex wrong_slash(r"\\");
+	std::regex wrong_slash(R"-(\\)-");
 	sample_path = std::regex_replace(sample_path, wrong_slash, "/");
 	default_path = std::regex_replace(default_path, wrong_slash, "/");
 	if (default_path.empty())
@@ -68,7 +67,7 @@ void SFZSound::add_unsupported_opcode(const std::string& opcode)
 void SFZSound::load_regions()
 {
 	SFZReader reader(this);
-	reader.read(file);
+	reader.read(path);
 }
 
 
@@ -141,7 +140,7 @@ int SFZSound::num_subsounds()
 
 std::string SFZSound::subsound_name(int which_subsound)
 {
-	return std::string::empty;
+	return std::string();
 }
 
 
@@ -169,9 +168,9 @@ void SFZSound::dump()
 		}
 
 	if (unsupported_opcodes.size() > 0) {
-		std::cout << "Unused opcodes:" << std::end;
+		std::cout << "Unused opcodes:" << std::endl;
 		for (const auto& kv: unsupported_opcodes)
-			std::cout << "  " << opcode << std::endl;
+			std::cout << "  " << kv.first << std::endl;
 		std::cout << std::endl;
 		}
 

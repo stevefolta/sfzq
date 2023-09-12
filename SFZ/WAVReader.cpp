@@ -1,4 +1,5 @@
 #include "WAVReader.h"
+#include "SampleBuffer.h"
 #include "RIFF.h"
 #include "WinTypes.h"
 
@@ -69,24 +70,54 @@ void WAVReader::read_info()
 
 bool WAVReader::read_samples_into(uint64_t start, uint64_t num_samples, SampleBuffer* buffer)
 {
-	auto offset = samples_offset + start * num_channels * (bits_per_sample / 8);
+	auto bytes_per_sample = bits_per_sample / 8;
+	auto offset = samples_offset + start * num_channels * bytes_per_sample;
 	file.seekg(offset);
 	if (!file.good())
 		return false;
 
-	/***/
+	for (int channel = 0; channel < num_channels; ++channel) {
+		auto buf_p = buffer->channel_start(channel);
+		file.read((char*) buf_p, num_samples * bytes_per_sample);
+		if (!file.good())
+			return false;
+		}
+
+	return true;
 }
 
 
 uint32_t WAVReader::num_loops()
 {
-	/***/
+	auto chunk_start = seek_chunk("smpl");
+	if (chunk_start <= 0)
+		return 0;
+	file.seekg(7 * 4, std::ios_base::cur);
+	if (!file.good())
+		return 0;
+	uint32_t num_loops = read_dword();
+	if (!file.good())
+		return 0;
+	return num_loops;
 }
 
 
 WAVReader::Loop WAVReader::loop(uint32_t index)
 {
-	/***/
+	auto chunk_start = seek_chunk("smpl");
+	if (chunk_start <= 0)
+		return {};
+	file.seekg(9 * 4 + index * 6 * 4 + 2 * 4, std::ios_base::cur);
+	if (!file.good())
+		return {};
+	Loop loop;
+	loop.start = read_dword();
+	if (!file.good())
+		return {};
+	loop.end = read_dword();
+	if (!file.good())
+		return {};
+	return loop;
 }
 
 

@@ -20,7 +20,7 @@ class WAVReader {
 		bool read_samples_into(uint64_t start, uint64_t num_samples, SampleBuffer* buffer);
 
 		struct Loop {
-			uint64_t start, end;
+			uint64_t start = 0, end = 0;
 			};
 		uint32_t num_loops();
 		Loop loop(uint32_t index);

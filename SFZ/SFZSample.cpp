@@ -1,7 +1,6 @@
 #include "SFZSample.h"
 #include "SampleBuffer.h"
 #include "WAVReader.h"
-#include "SFZDebug.h"
 #include <iostream>
 
 
@@ -11,12 +10,12 @@ bool SFZSample::load()
 	WAVReader reader(path);
 	if (!reader.valid())
 		return false;
-	sample_rate = reader.sample_rate();
-	num_samples = reader.num_samples();
+	sample_rate = reader.sample_rate;
+	num_samples = reader.num_samples;
 
 	// Read some extra samples, which will be filled with zeros, so interpolation
 	// can be done without having to check for the edge all the time.
-	buffer = new SampleBuffer(reader.num_channels(), num_samples + 4);
+	buffer = new SampleBuffer(reader.num_channels, num_samples + 4);
 	reader.read_samples_into(0, num_samples, buffer);
 	auto num_loops = reader.num_loops();
 	if (num_loops > 0) {

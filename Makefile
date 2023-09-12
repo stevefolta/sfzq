@@ -3,6 +3,7 @@ SOURCES := sfzq.cpp
 SOURCES += SFZQPlugin.cpp
 SFZ_DIR := SFZ
 SFZ_SOURCES += SFZRegion.cpp SFZSample.cpp
+SFZ_SOURCES += WAVReader.cpp RIFF.cpp
 SOURCES += $(foreach source,$(SFZ_SOURCES),$(SFZ_DIR)/$(source))
 FRAMEWORK_DIR := CLAPFramework
 FRAMEWORK_SOURCES += CLAPPlugin.cpp

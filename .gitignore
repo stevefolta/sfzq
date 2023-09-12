@@ -1,0 +1,9 @@
+*.clap
+objects
+*.local
+temp*
+tmp*
+*.tmp
+*.temp
+tags
+

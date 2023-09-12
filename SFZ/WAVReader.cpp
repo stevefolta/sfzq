@@ -30,7 +30,7 @@ void WAVReader::read_info()
 	if (!file.good() || !fourcc_eq(fourcc, "WAVE"))
 		return;
 	auto data_chunk_size = seek_chunk("data");
-	if (data_chunk_size < 0)
+	if (data_chunk_size <= 0)
 		return;
 	samples_offset = file.tellg();
 	if (!file.good())
@@ -119,11 +119,15 @@ long WAVReader::seek_chunk(const char* fourcc)
 {
 	long position = RIFFChunk::header_size + 4;
 	file.seekg(position);
+	if (!file.good())
+		return -1;
 
 	while (position < file_end) {
 		// Read the next chunk header.
 		char chunk_fourcc[4];
 		file.read(chunk_fourcc, sizeof(chunk_fourcc));
+		if (!file.good())
+			return -1;
 		auto chunk_size = read_dword();
 		position += RIFFChunk::header_size;
 
@@ -134,9 +138,11 @@ long WAVReader::seek_chunk(const char* fourcc)
 		// Keep looking.
 		position += chunk_size;
 		file.seekg(position);
+		if (!file.good())
+			return -1;
 		}
 
-	return 0;
+	return -1;
 }
 
 

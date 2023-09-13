@@ -1,5 +1,6 @@
 #pragma once
 
+
 class OutBuffer {
 	public:
 		virtual float* samples_for_channel(int channel) = 0;

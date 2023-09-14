@@ -31,7 +31,7 @@ void SFZSynth::reset()
 }
 
 
-void SFZSynth::note_on(int channel, int note, double velocity)
+void SFZSynth::note_on(int note, double velocity)
 {
 	int midi_velocity = (int) (velocity * 127);
 
@@ -84,9 +84,7 @@ void SFZSynth::note_on(int channel, int note, double velocity)
 }
 
 
-void SFZSynth::note_off(
-	int channel, int note,
-	double velocity, bool allow_tail_off)
+void SFZSynth::note_off(int note, double velocity, bool allow_tail_off)
 {
 	// Start release region.
 	if (sound) {
@@ -109,6 +107,14 @@ void SFZSynth::tuning_expression_changed(double new_tuning_expression)
 	cur_tuning_expression = new_tuning_expression;
 	for (auto voice: voices)
 		voice->tuning_expression_changed(new_tuning_expression);
+}
+
+
+void SFZSynth::render(
+	OutBuffer* output_buffer, int start_sample, int num_samples)
+{
+	for (auto voice: voices)
+		voice->render(output_buffer, start_sample, num_samples);
 }
 
 

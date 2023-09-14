@@ -5,6 +5,7 @@
 
 class SFZVoice;
 class SFZSound;
+class OutBuffer;
 
 
 class SFZSynth {
@@ -16,11 +17,11 @@ class SFZSynth {
 		void set_sample_rate(double new_sample_rate);
 		void reset();
 
-		void note_on(int midi_channel, int note, double velocity);
-		void note_off(
-			int midi_channel, int note,
-			double velocity, bool allow_tail_off);
+		void note_on(int note, double velocity);
+		void note_off(int note, double velocity, bool allow_tail_off);
 		void tuning_expression_changed(double new_tuning_expression);
+		void render(
+			OutBuffer* output_buffer, int start_sample, int num_samples);
 
 		int num_voices_used();
 		std::string voice_info_string();

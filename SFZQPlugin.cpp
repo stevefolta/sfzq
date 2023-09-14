@@ -11,6 +11,7 @@
 #include "CLAPParamsExtension.h"
 #include "CLAPStateExtension.h"
 #include "CLAPStream.h"
+#include "CLAPOutBuffer.h"
 
 
 SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host)
@@ -62,7 +63,44 @@ void SFZQPlugin::reset()
 
 clap_process_status SFZQPlugin::process(const clap_process_t* process)
 {
-	/***/
+	const uint32_t num_frames = process->frames_count;
+	const uint32_t num_events = process->in_events->size(process->in_events);
+	uint32_t cur_event = 0;
+	uint32_t next_event_frame = num_events > 0 ? 0 : num_frames;
+
+	// If we had parameters, this is where we'd send parameter changes from the
+	// GUI back to the host.
+
+	// Setup rendering.
+	CLAPOutBuffer out_buffer(&process->audio_outputs[0]);
+
+	// Render and handle events.
+	for (uint32_t cur_frame = 0; cur_frame < num_frames; ) {
+		// Handle events at this frame (and/or update next_event_frame).
+		while (cur_event < num_events && next_event_frame == cur_frame) {
+			const clap_event_header_t* event = process->in_events->get(process->in_events, cur_event);
+			if (event->time != cur_frame) {
+				next_event_frame = event->time;
+				break;
+				}
+
+			process_event(event);
+
+			cur_event += 1;
+			if (cur_event == num_events) {
+				next_event_frame = num_frames;
+				break;
+				}
+			}
+
+		// Render.
+		synth->render(&out_buffer, cur_frame, next_event_frame - cur_frame);
+		cur_frame = next_event_frame;
+		}
+
+	// Send note-end events back to the host.
+	//*** TODO
+
 	return CLAP_PROCESS_CONTINUE;
 }
 
@@ -176,6 +214,35 @@ bool SFZQPlugin::load_state(const clap_istream_t* stream)
 {
 	/***/
 	return true;
+}
+
+
+void SFZQPlugin::process_event(const clap_event_header_t* event)
+{
+	switch (event->type) {
+		case CLAP_EVENT_NOTE_ON:
+			{
+			auto note_event = (const clap_event_note_t*) event;
+			synth->note_on(note_event->key, note_event->velocity);
+			}
+			break;
+		case CLAP_EVENT_NOTE_OFF:
+		case CLAP_EVENT_NOTE_CHOKE:
+			{
+			auto note_event = (const clap_event_note_t*) event;
+			synth->note_off(
+				note_event->key, note_event->velocity,
+				(event->type == CLAP_EVENT_NOTE_OFF));
+			}
+			break;
+		case CLAP_EVENT_NOTE_EXPRESSION:
+			{
+			auto expression_event = (const clap_event_note_expression_t*) event;
+			if (expression_event->expression_id == CLAP_NOTE_EXPRESSION_TUNING)
+				synth->tuning_expression_changed(expression_event->value);
+			}
+			break;
+		}
 }
 
 

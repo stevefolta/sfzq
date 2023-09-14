@@ -23,7 +23,7 @@ class SFZVoice {
 		void stop_note_quick();
 		void kill_note();
 		void tuning_expression_changed(double new_value);
-		void render_next_block(
+		void render(
 			OutBuffer* output_buffer, int start_sample, int num_samples);
 		bool is_playing_note_down();
 		bool is_playing_one_shot();

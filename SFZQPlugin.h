@@ -55,5 +55,7 @@ class SFZQPlugin : public CLAPPlugin {
 				SFZQPlugin* plugin;
 			};
 		CairoGUI cairo_gui;
+
+		void process_event(const clap_event_header_t* event);
 	};
 

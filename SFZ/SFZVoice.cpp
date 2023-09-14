@@ -143,7 +143,7 @@ void SFZVoice::tuning_expression_changed(double new_value)
 }
 
 
-void SFZVoice::render_next_block(
+void SFZVoice::render(
 	OutBuffer* output_buffer, int start_sample, int num_samples)
 {
 	if (region == nullptr)

@@ -2,6 +2,7 @@
 
 #include "clap/clap.h"
 #include <vector>
+#include <string.h>
 
 class CLAPPosixFDExtension;
 class CLAPCairoGUIExtension;

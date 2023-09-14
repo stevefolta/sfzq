@@ -1,2 +1,59 @@
 #include "CLAPPlugin.h"
+#include "CairoGUI.h"
+#include "CLAPCairoGUIExtension.h"
+
+class SFZSynth;
+class Widget;
+class FileChooser;
+class Button;
+
+
+class SFZQPlugin : public CLAPPlugin {
+	public:
+		SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host);
+		~SFZQPlugin();
+
+		bool activate(double sample_rate, uint32_t min_frames, uint32_t max_frames);
+		void deactivate();
+		void reset();
+		clap_process_status process(const clap_process_t* process);
+		const void* get_extension(const char* id);
+
+		void on_fd(int fd, clap_posix_fd_flags_t flags);
+		bool get_gui_size(uint32_t* width_out, uint32_t* height_out);
+		bool can_resize_gui() { return true; }
+		bool resize_gui(uint32_t width, uint32_t height);
+		void paint_gui();
+		void mouse_pressed(int32_t x, int32_t y, int button);
+		void mouse_released(int32_t x, int32_t y, int button);
+		void mouse_moved(int32_t x, int32_t y);
+		void main_thread_tick();
+
+		bool save_state(const clap_ostream_t* stream);
+		bool load_state(const clap_istream_t* stream);
+
+	protected:
+		enum {
+			gui_width = 500,
+			gui_height = 300,
+			};
+
+		SFZSynth* synth = nullptr;
+
+		FileChooser* file_chooser = nullptr;
+		Button* load_button = nullptr;
+		Widget* tracking_widget = nullptr;
+
+		class CairoGUI : public ::CairoGUI {
+			public:
+				CairoGUI(SFZQPlugin* plugin_in)
+					: plugin(plugin_in) {}
+
+				cairo_t* cairo() { return plugin->cairo_gui_extension->cairo; }
+				void refresh() { plugin->cairo_gui_extension->refresh(); }
+
+				SFZQPlugin* plugin;
+			};
+		CairoGUI cairo_gui;
+	};
 

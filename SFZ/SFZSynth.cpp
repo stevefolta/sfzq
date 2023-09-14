@@ -18,6 +18,19 @@ SFZSynth::~SFZSynth()
 }
 
 
+void SFZSynth::set_sample_rate(double new_sample_rate)
+{
+	for (auto voice: voices)
+		voice->sample_rate = new_sample_rate;
+}
+
+void SFZSynth::reset()
+{
+	for (auto voice: voices)
+		voice->kill_note();
+}
+
+
 void SFZSynth::note_on(int channel, int note, double velocity)
 {
 	int midi_velocity = (int) (velocity * 127);

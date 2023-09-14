@@ -114,7 +114,6 @@ void SFZVoice::stop_note(float velocity, const bool allow_tail_off)
 		}
 }
 
-
 void SFZVoice::stop_note_for_group()
 {
 	if (region->off_mode == SFZRegion::fast)
@@ -123,10 +122,14 @@ void SFZVoice::stop_note_for_group()
 		ampeg.note_off();
 }
 
-
 void SFZVoice::stop_note_quick()
 {
 	ampeg.fast_release();
+}
+
+void SFZVoice::kill_note()
+{
+	region = nullptr;
 }
 
 
@@ -305,12 +308,6 @@ void SFZVoice::calc_pitch_ratio()
 	pitch_ratio =
 		(target_freq * region->sample->sample_rate) /
 		(natural_freq * sample_rate);
-}
-
-
-void SFZVoice::kill_note()
-{
-	region = nullptr;
 }
 
 

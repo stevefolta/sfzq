@@ -21,6 +21,7 @@ class SFZVoice {
 		void stop_note(float velocity, const bool allow_tail_off);
 		void stop_note_for_group();
 		void stop_note_quick();
+		void kill_note();
 		void tuning_expression_changed(double new_value);
 		void render_next_block(
 			OutBuffer* output_buffer, int start_sample, int num_samples);
@@ -56,7 +57,6 @@ class SFZVoice {
 		int cur_velocity;
 
 		void calc_pitch_ratio();
-		void kill_note();
 		void note_ended();
 		double note_hz(double note, const double freq_of_a = 440.0);
 	};

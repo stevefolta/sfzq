@@ -13,6 +13,8 @@ class SFZSynth {
 		~SFZSynth();
 
 		void set_sound(SFZSound* new_sound) { sound = new_sound; }
+		void set_sample_rate(double new_sample_rate);
+		void reset();
 
 		void note_on(int midi_channel, int note, double velocity);
 		void note_off(

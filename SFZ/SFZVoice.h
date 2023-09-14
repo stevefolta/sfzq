@@ -30,6 +30,7 @@ class SFZVoice {
 		bool is_playing_note_down();
 		bool is_playing_one_shot();
 		bool is_playing() { return region != nullptr; }
+		bool get_currently_playing_note() { return cur_midi_note; }
 
 		int get_group();
 		int get_off_by();

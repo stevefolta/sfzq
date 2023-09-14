@@ -1,6 +1,7 @@
 #include "SFZSynth.h"
 #include "SFZVoice.h"
 #include "SFZSound.h"
+#include <sstream>
 
 
 
@@ -39,15 +40,13 @@ void SFZSynth::note_on(int channel, int note, double velocity)
 	// Also stop any voices still playing this note.
 	bool any_notes_playing = false;
 	for (auto voice: voices) {
-		if (voice->is_playing_channel(channel)) {
-			if (voice->is_playing_note_down()) {
-				if (voice->get_currently_playing_note() == note) {
-					if (!voice->is_playing_one_shot())
-						voice->stop_note_quick();
-					}
-				else
-					any_notes_playing = true;
+		if (voice->is_playing_note_down()) {
+			if (voice->get_currently_playing_note() == note) {
+				if (!voice->is_playing_one_shot())
+					voice->stop_note_quick();
 				}
+			else
+				any_notes_playing = true;
 			}
 		}
 
@@ -56,7 +55,7 @@ void SFZSynth::note_on(int channel, int note, double velocity)
 		(any_notes_playing ? SFZRegion::legato : SFZRegion::first);
 	if (sound) {
 		int num_regions = sound->num_regions();
-		for (i = 0; i < num_regions; ++i) {
+		for (int i = 0; i < num_regions; ++i) {
 			SFZRegion* region = sound->region_at(i);
 			if (region->matches(note, midi_velocity, trigger)) {
 				SFZVoice* voice =
@@ -64,7 +63,7 @@ void SFZSynth::note_on(int channel, int note, double velocity)
 						sound, note, channel, is_note_stealing_enabled());
 				if (voice) {
 					voice->set_region(region);
-					start_voice(voice, sound, channel, note, velocity);
+					voice->start_note(note, velocity, sound, cur_pitch_wheel);
 					}
 				}
 			}
@@ -78,8 +77,6 @@ void SFZSynth::note_off(
 	int channel, int note,
 	double velocity, bool allow_tail_off)
 {
-	Synthesiser::note_off(channel, note, velocity, allow_tail_off);
-
 	// Start release region.
 	if (sound) {
 		SFZRegion* region =
@@ -89,13 +86,8 @@ void SFZSynth::note_off(
 			SFZVoice* voice =
 				find_free_voice(sound, note, channel, false);
 			if (voice) {
-				// Synthesiser is too locked-down (ivars are private rt protected), so
-				// we have to use a "set_region()" mechanism.
 				voice->set_region(region);
-				start_voice(
-					voice, sound,
-					channel, note,
-					note_velocities[note] / 127.0);
+				voice->start_note(note, note_velocities[note] / 127.0, sound, cur_pitch_wheel);
 				}
 			}
 		}
@@ -106,14 +98,14 @@ int SFZSynth::num_voices_used()
 {
 	int num_used = 0;
 	for (auto voice: voices) {
-		if (voice->get_currently_playing_note() >= 0)
+		if (voice->is_playing())
 			num_used += 1;
 		}
 	return num_used;
 }
 
 
-String SFZSynth::voice_info_string()
+std::string SFZSynth::voice_info_string()
 {
 	enum {
 		max_shown_voices = 20,
@@ -122,14 +114,14 @@ String SFZSynth::voice_info_string()
 	std::vector<std::string> lines;
 	int num_used = 0, num_shown = 0;
 	for (auto voice: voices) {
-		if (voice->get_currently_playing_note() < 0)
+		if (!voice->is_playing())
 			continue;
 		num_used += 1;
 		if (num_shown >= max_shown_voices)
 			continue;
 		lines.push_back(voice->info_string());
 		}
-	ostringstream result;
+	std::ostringstream result;
 	result << "voices used: " << num_used << std::endl;
 	for (auto& line: lines)
 		result << line << std::endl;

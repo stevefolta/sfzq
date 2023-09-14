@@ -24,10 +24,10 @@ SFZVoice::~SFZVoice()
 
 
 void SFZVoice::start_note(
-	const int midi_note_number,
+	const int note_in,
 	const float float_velocity,
 	SFZSound* sound,
-	const int current_pitch_wheel_position)
+	double current_tuning_expression)
 {
 	if (sound == nullptr) {
 		kill_note();
@@ -37,7 +37,7 @@ void SFZVoice::start_note(
 	int velocity = (int) (float_velocity * 127.0);
 	cur_velocity = velocity;
 	if (region == nullptr)
-		region = sound->get_region_for(midi_note_number, velocity);
+		region = sound->get_region_for(note_in, velocity);
 	if (region == nullptr || region->sample == nullptr || region->sample->buffer == nullptr) {
 		kill_note();
 		return;
@@ -48,8 +48,8 @@ void SFZVoice::start_note(
 		}
 
 	// Pitch.
-	cur_midi_note = midi_note_number;
-	cur_pitch_wheel = current_pitch_wheel_position;
+	cur_note = note_in;
+	cur_tuning_expression = current_tuning_expression;
 	calc_pitch_ratio();
 
 	// Gain.
@@ -130,21 +130,13 @@ void SFZVoice::stop_note_quick()
 }
 
 
-void SFZVoice::pitch_wheel_moved(const int new_value)
+void SFZVoice::tuning_expression_changed(double new_value)
 {
 	if (region == nullptr)
 		return;
 
-	cur_pitch_wheel = new_value;
+	cur_tuning_expression = new_value;
 	calc_pitch_ratio();
-}
-
-
-void SFZVoice::controller_moved(
-	const int controller_number,
-	const int new_value)
-{
-	/***/
 }
 
 
@@ -281,7 +273,7 @@ std::string SFZVoice::info_string()
 
 	std::ostringstream result;
 	result <<
-		"note: " << cur_midi_note << ", vel: " << cur_velocity <<
+		"note: " << cur_note << ", vel: " << cur_velocity <<
 		", pan: " << region->pan << ", eg: " << eg_segment_name <<
 		", loops: " << num_loops << std::endl;
 	return result.str();
@@ -291,19 +283,22 @@ std::string SFZVoice::info_string()
 
 void SFZVoice::calc_pitch_ratio()
 {
-	double note = cur_midi_note;
+	double note = cur_note;
 	note += region->transpose;
 	note += region->tune / 100.0;
 
 	double adjusted_pitch =
 		region->pitch_keycenter +
 		(note - region->pitch_keycenter) * (region->pitch_keytrack / 100.0);
-	if (cur_pitch_wheel != 8192) {
-		double wheel = ((2.0 * cur_pitch_wheel / 16383.0) - 1.0);
-		if (wheel > 0)
-			adjusted_pitch += wheel * region->bend_up / 100.0;
+	if (cur_tuning_expression != 0.0) {
+		// CLAP's pitch expression is in the range -120.0 to 120.0 semitones.  But
+		// SFZ also specifies a "bend_up" and "bend_down" range, defaulting to -200
+		// and +200 cents, with a max of +/- 9600 cents.  Here, we'll assume that
+		// CLAP will normally give us -2.0 to +2.0 semitones.
+		if (cur_tuning_expression > 0)
+			adjusted_pitch += (cur_tuning_expression / 2.0) * region->bend_up / 100.0;
 		else
-			adjusted_pitch += wheel * region->bend_down / -100.0;
+			adjusted_pitch += (cur_tuning_expression / 2.0) * region->bend_down / 100.0;
 		}
 	double target_freq = note_hz(adjusted_pitch);
 	double natural_freq = note_hz(region->pitch_keycenter);

@@ -14,23 +14,20 @@ class SFZVoice {
 		~SFZVoice();
 
 		void start_note(
-			const int midi_note_number,
+			const int note,
 			const float velocity,
 			SFZSound* sound,
-			const int current_pitch_wheel_position);
+			double current_tuning_expression);
 		void stop_note(float velocity, const bool allow_tail_off);
 		void stop_note_for_group();
 		void stop_note_quick();
-		void pitch_wheel_moved(const int new_value);
-		void controller_moved(
-			const int controller_number,
-			const int new_value);
+		void tuning_expression_changed(double new_value);
 		void render_next_block(
 			OutBuffer* output_buffer, int start_sample, int num_samples);
 		bool is_playing_note_down();
 		bool is_playing_one_shot();
 		bool is_playing() { return region != nullptr; }
-		bool get_currently_playing_note() { return cur_midi_note; }
+		int currently_playing_note() { return cur_note; }
 
 		int get_group();
 		int get_off_by();
@@ -45,7 +42,8 @@ class SFZVoice {
 	protected:
 		int trigger;
 		SFZRegion* region;
-		int cur_midi_note, cur_pitch_wheel;
+		int cur_note;
+		double cur_tuning_expression;
 		double pitch_ratio;
 		float note_gain_left, note_gain_right;
 		double source_sample_position;

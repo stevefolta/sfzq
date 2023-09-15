@@ -38,7 +38,7 @@ SFZSample::~SFZSample()
 
 std::string SFZSample::short_name()
 {
-	return path.substr(0, path.find_last_of('/'));
+	return path.substr(path.find_last_of('/') + 1);
 }
 
 

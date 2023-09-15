@@ -11,7 +11,7 @@ class SFZSample;
 class SFZSound {
 	public:
 		SFZSound(std::string path);
-		~SFZSound();
+		virtual ~SFZSound();
 
 		void add_region(SFZRegion* region); 	// Takes ownership of the region.
 		SFZSample* add_sample(std::string path, std::string default_path = "");

@@ -1,5 +1,6 @@
 #include "SFZQPlugin.h"
 #include "SFZSynth.h"
+#include "SFZSound.h"
 #include "Button.h"
 #include "FileChooser.h"
 #include "Label.h"
@@ -12,6 +13,7 @@
 #include "CLAPStateExtension.h"
 #include "CLAPStream.h"
 #include "CLAPOutBuffer.h"
+#include <thread>
 #include <iostream>
 
 static const double filename_label_height = 24.0;
@@ -45,7 +47,11 @@ SFZQPlugin::~SFZQPlugin()
 	delete progress_bar;
 	delete file_chooser;
 
+	if (load_samples_thread.joinable())
+		load_samples_thread.join();
+
 	delete synth;
+	delete loading_sound;
 
 	delete cairo_gui_extension;
 	delete posix_fd_extension;
@@ -162,6 +168,8 @@ void SFZQPlugin::paint_gui()
 	cairo_paint(cairo);
 
 	filename_label->paint();
+	if (progress_bar)
+		progress_bar->paint();
 	/***/
 
 	if (file_chooser) {
@@ -308,7 +316,25 @@ void SFZQPlugin::open_file_chooser()
 
 void SFZQPlugin::load_sfx(std::string path)
 {
-	/***/
+	filename_label->label = path.substr(path.find_last_of('/') + 1);
+	filename_label->color = { 0.0, 0.0, 0.0 };
+
+	loading_sound = new SFZSound(path);
+	loading_sound->load_regions();
+
+	progress_bar = new ProgressBar(&cairo_gui);
+	progress_bar->max = 1.0;
+	layout();
+
+	if (load_samples_thread.joinable())
+		load_samples_thread.join();
+	load_samples_thread = std::thread([&]() { load_samples(); });
+}
+
+
+void SFZQPlugin::load_samples()
+{
+	loading_sound->load_samples(&progress_bar->current);
 }
 
 

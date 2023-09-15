@@ -2,8 +2,10 @@
 #include "CairoGUI.h"
 #include "CLAPCairoGUIExtension.h"
 #include <string>
+#include <thread>
 
 class SFZSynth;
+class SFZSound;
 class Widget;
 class FileChooser;
 class Label;
@@ -41,6 +43,8 @@ class SFZQPlugin : public CLAPPlugin {
 			};
 
 		SFZSynth* synth = nullptr;
+		SFZSound* loading_sound = nullptr;
+		std::thread load_samples_thread;
 
 		Label* filename_label = nullptr;
 		ProgressBar* progress_bar = nullptr;;
@@ -64,5 +68,6 @@ class SFZQPlugin : public CLAPPlugin {
 		void layout();
 		void open_file_chooser();
 		void load_sfx(std::string path);
+		void load_samples();
 	};
 

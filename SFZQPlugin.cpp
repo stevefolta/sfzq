@@ -25,7 +25,9 @@ static const double file_chooser_alpha = 0.9;
 
 
 SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host)
-	: CLAPPlugin(descriptor, host), load_to_main_queue(20), cairo_gui(this)
+	: CLAPPlugin(descriptor, host),
+	main_to_audio_queue(20), audio_to_main_queue(20), load_to_main_queue(20),
+	cairo_gui(this)
 {
 	posix_fd_extension = new CLAPPosixFDExtension(this);
 	cairo_gui_extension = new CLAPCairoGUIExtension(this);

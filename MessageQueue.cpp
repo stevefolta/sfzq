@@ -7,7 +7,7 @@ enum {
 
 MessageQueue::MessageQueue(int capacity_in)
 {
-	capacity = (capacity_in >= 0 ? capacity_in : defaultCapacity);
+	capacity = (capacity_in > 0 ? capacity_in : defaultCapacity);
 	ring = new Message[capacity];
 	head = tail = 0;
 }

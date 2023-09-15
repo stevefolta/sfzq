@@ -89,6 +89,17 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 	// If we had parameters, this is where we'd send parameter changes from the
 	// GUI back to the host.
 
+	// Handle messages from the main thread.
+	auto message = main_to_audio_queue.pop_front();
+	if (message.id == UseSound) {
+		auto old_sound = synth->set_sound((SFZSound*) message.param);
+		if (old_sound) {
+			audio_to_main_queue.send(DoneWithSound, old_sound);
+			if (host)
+				host->request_callback(host);
+			}
+		}
+
 	// Setup rendering.
 	CLAPOutBuffer out_buffer(&process->audio_outputs[0]);
 
@@ -232,10 +243,17 @@ void SFZQPlugin::mouse_moved(int32_t x, int32_t y)
 
 void SFZQPlugin::main_thread_tick()
 {
-	auto message = load_to_main_queue.pop_front();
+	auto message = audio_to_main_queue.pop_front();
+	if (message.id == DoneWithSound) {
+		delete (SFZSound*) message.param;
+		}
+
+	message = load_to_main_queue.pop_front();
 	if (message.id == SampleLoadComplete) {
 		delete progress_bar;
 		progress_bar = nullptr;
+		main_to_audio_queue.send(UseSound, loading_sound);
+		loading_sound = nullptr;
 		}
 }
 

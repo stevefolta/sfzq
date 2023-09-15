@@ -13,7 +13,11 @@ class SFZSynth {
 		SFZSynth(int num_voices);
 		~SFZSynth();
 
-		void set_sound(SFZSound* new_sound) { sound = new_sound; }
+		SFZSound* set_sound(SFZSound* new_sound) {
+			auto old_sound = sound;
+			sound = new_sound;
+			return old_sound;
+			}
 		void set_sample_rate(double new_sample_rate);
 		void reset();
 

@@ -53,6 +53,8 @@ class SFZQPlugin : public CLAPPlugin {
 		Widget* tracking_widget = nullptr;
 		uint32_t gui_width = default_gui_width, gui_height = default_gui_height;
 
+		MessageQueue main_to_audio_queue;
+		MessageQueue audio_to_main_queue;
 		MessageQueue load_to_main_queue;
 
 		class CairoGUI : public ::CairoGUI {

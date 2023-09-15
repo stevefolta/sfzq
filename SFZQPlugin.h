@@ -18,6 +18,11 @@ class SFZQPlugin : public CLAPPlugin {
 		SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host);
 		~SFZQPlugin();
 
+		uint32_t num_note_ports(bool is_input);
+		bool get_note_port_info(uint32_t index, bool is_input, clap_note_port_info_t* info_out);
+		uint32_t num_audio_ports(bool is_input);
+		bool get_audio_port_info(uint32_t index, bool is_input, clap_audio_port_info_t* info_out);
+
 		bool activate(double sample_rate, uint32_t min_frames, uint32_t max_frames);
 		void deactivate();
 		void reset();

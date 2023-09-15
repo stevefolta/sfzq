@@ -65,6 +65,55 @@ SFZQPlugin::~SFZQPlugin()
 }
 
 
+static const std::vector<clap_note_port_info_t> note_in_ports = {
+	{
+		.id = 0,
+		.supported_dialects = CLAP_NOTE_DIALECT_CLAP,
+		.preferred_dialect = CLAP_NOTE_DIALECT_CLAP,
+		.name = "in",
+		},
+	};
+
+static const std::vector<clap_audio_port_info_t> audio_out_ports = {
+	{
+		.id = 0,
+		.name = "out",
+		.flags = CLAP_AUDIO_PORT_IS_MAIN,
+		.channel_count = 2,
+		.port_type = CLAP_PORT_STEREO,
+		.in_place_pair = CLAP_INVALID_ID,
+		},
+	};
+
+uint32_t SFZQPlugin::num_note_ports(bool is_input)
+{
+	return is_input ? note_in_ports.size() : 0;
+}
+
+bool SFZQPlugin::get_note_port_info(uint32_t index, bool is_input, clap_note_port_info_t* info_out)
+{
+	if (is_input && index < note_in_ports.size()) {
+		*info_out = note_in_ports[index];
+		return true;
+		}
+	return false;
+}
+
+uint32_t SFZQPlugin::num_audio_ports(bool is_input)
+{
+	return (!is_input ? audio_out_ports.size() : 0);
+}
+
+bool SFZQPlugin::get_audio_port_info(uint32_t index, bool is_input, clap_audio_port_info_t* info_out)
+{
+	if (!is_input && index < audio_out_ports.size()) {
+		*info_out = audio_out_ports[index];
+		return true;
+		}
+	return false;
+}
+
+
 bool SFZQPlugin::activate(double sample_rate, uint32_t min_frames, uint32_t max_frames)
 {
 	synth->set_sample_rate(sample_rate);

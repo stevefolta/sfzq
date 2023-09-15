@@ -1,5 +1,6 @@
 #include "SFZQPlugin.h"
 #include <vector>
+#include <iostream>
 
 
 static const std::vector<clap_plugin_descriptor_t> our_descriptors = {
@@ -29,4 +30,12 @@ class SFZQPluginFactory : public CLAPPluginFactory {
 SFZQPluginFactory factory;
 
 DECLARE_CLAP_PLUGIN_ENTRY(factory)
+
+
+#ifdef DEBUG_UNLOADING
+extern "C" __attribute__((destructor)) void at_unload()
+{
+	std::cerr << "- Unloading." << std::endl;
+}
+#endif
 

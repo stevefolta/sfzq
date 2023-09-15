@@ -43,6 +43,7 @@ class SFZSound {
 		std::map<std::string, std::string> unsupported_opcodes;
 
 		std::string sibling_path(std::string from, std::string filename);
+		std::string fix_slashes(std::string str);
 	};
 
 

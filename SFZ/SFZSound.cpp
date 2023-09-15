@@ -2,7 +2,7 @@
 #include "SFZRegion.h"
 #include "SFZSample.h"
 #include "SFZReader.h"
-#include <regex>
+#include <sstream>
 #include <iostream>
 
 
@@ -34,9 +34,8 @@ void SFZSound::add_region(SFZRegion* region)
 
 SFZSample* SFZSound::add_sample(std::string sample_path, std::string default_path)
 {
-	std::regex wrong_slash(R"-(\\)-");
-	sample_path = std::regex_replace(sample_path, wrong_slash, "/");
-	default_path = std::regex_replace(default_path, wrong_slash, "/");
+	sample_path = fix_slashes(sample_path);
+	default_path = fix_slashes(default_path);
 	if (default_path.empty())
 		sample_path = sibling_path(path, sample_path);
 	else {
@@ -191,6 +190,22 @@ std::string SFZSound::sibling_path(std::string from, std::string filename)
 	if (filename[0] == '/')
 		return filename;
 	return from.substr(0, from.find_last_of('/') + 1) + filename;
+}
+
+std::string SFZSound::fix_slashes(std::string str)
+{
+	std::ostringstream result;
+	std::string::size_type start = 0;
+	while (true) {
+		auto slash_pos = str.find_first_of('\\', start);
+		if (slash_pos == std::string::npos) {
+			result << str.substr(start);
+			break;
+			}
+		result << str.substr(start, slash_pos - start) << '/';
+		start = slash_pos + 1;
+		}
+	return result.str();
 }
 
 

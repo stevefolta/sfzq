@@ -18,6 +18,7 @@ static const double filename_label_height = 24.0;
 static const double progress_bar_height = 20.0;
 static const double margin = 10.0;
 static const double spacing = 6.0;
+static const double file_chooser_alpha = 0.9;
 
 
 SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host)
@@ -163,6 +164,15 @@ void SFZQPlugin::paint_gui()
 	filename_label->paint();
 	/***/
 
+	if (file_chooser) {
+		cairo_push_group(cairo);
+		cairo_set_source_rgb(cairo, 1.0, 1.0, 1.0);
+		cairo_paint(cairo);
+		file_chooser->paint();
+		cairo_pop_group_to_source(cairo);
+		cairo_paint_with_alpha(cairo, file_chooser_alpha);
+		}
+
 	// Blit to screen.
 	cairo_pop_group_to_source(cairo);
 	cairo_paint(cairo);
@@ -185,6 +195,8 @@ void SFZQPlugin::mouse_pressed(int32_t x, int32_t y, int button)
 
 	if (file_chooser && file_chooser->contains(x, y))
 		tracking_widget = file_chooser;
+	else if (filename_label->contains(x, y))
+		open_file_chooser();
 	if (tracking_widget)
 		tracking_widget->mouse_pressed(x, y);
 	cairo_gui_extension->refresh();
@@ -270,6 +282,33 @@ void SFZQPlugin::layout()
 		file_chooser->rect = { margin, margin, 0, 0 };
 		file_chooser->resize_to(contents_width, gui_height - 2 * margin);
 		}
+}
+
+
+void SFZQPlugin::open_file_chooser()
+{
+	if (file_chooser)
+		return;
+
+	file_chooser = new FileChooser(&cairo_gui, {});
+	file_chooser->set_ok_fn([&](std::string path) {
+		delete file_chooser;
+		file_chooser = nullptr;
+		tracking_widget = nullptr;
+		load_sfx(path);
+		});
+	file_chooser->set_cancel_fn([&]() {
+		delete file_chooser;
+		file_chooser = nullptr;
+		tracking_widget = nullptr;
+		});
+	layout();
+}
+
+
+void SFZQPlugin::load_sfx(std::string path)
+{
+	/***/
 }
 
 

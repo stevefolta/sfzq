@@ -1,6 +1,7 @@
 #include "CLAPPlugin.h"
 #include "CairoGUI.h"
 #include "CLAPCairoGUIExtension.h"
+#include <string>
 
 class SFZSynth;
 class Widget;
@@ -61,5 +62,7 @@ class SFZQPlugin : public CLAPPlugin {
 
 		void process_event(const clap_event_header_t* event);
 		void layout();
+		void open_file_chooser();
+		void load_sfx(std::string path);
 	};
 

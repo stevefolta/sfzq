@@ -86,6 +86,12 @@ void SFZSynth::note_on(int note, double velocity)
 
 void SFZSynth::note_off(int note, double velocity, bool allow_tail_off)
 {
+	// Stop any voices playing this note.
+	for (auto voice: voices) {
+		if (voice->is_playing_note_down() && voice->currently_playing_note() == note)
+			voice->stop_note(velocity, true);
+		}
+
 	// Start release region.
 	if (sound) {
 		SFZRegion* region =

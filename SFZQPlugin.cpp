@@ -12,6 +12,12 @@
 #include "CLAPStateExtension.h"
 #include "CLAPStream.h"
 #include "CLAPOutBuffer.h"
+#include <iostream>
+
+static const double filename_label_height = 24.0;
+static const double progress_bar_height = 20.0;
+static const double margin = 10.0;
+static const double spacing = 6.0;
 
 
 SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host)
@@ -27,12 +33,16 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	synth = new SFZSynth(32);
 
 	// GUI.
-	/***/
+	filename_label = new Label(&cairo_gui, "Click here to open SFZ file...");
+	filename_label->color = { 0.5, 0.5, 0.5 };
+	layout();
 }
 
 SFZQPlugin::~SFZQPlugin()
 {
-	/***/
+	delete filename_label;
+	delete progress_bar;
+	delete file_chooser;
 
 	delete synth;
 
@@ -134,7 +144,9 @@ bool SFZQPlugin::get_gui_size(uint32_t* width_out, uint32_t* height_out)
 
 bool SFZQPlugin::resize_gui(uint32_t width, uint32_t height)
 {
-	/***/
+	gui_width = width;
+	gui_height = height;
+	layout();
 	return true;
 }
 
@@ -148,6 +160,7 @@ void SFZQPlugin::paint_gui()
 	cairo_set_source_rgb(cairo, 1.0, 1.0, 1.0);
 	cairo_paint(cairo);
 
+	filename_label->paint();
 	/***/
 
 	// Blit to screen.
@@ -170,7 +183,7 @@ void SFZQPlugin::mouse_pressed(int32_t x, int32_t y, int button)
 	else if (button != Button1)
 		return;
 
-	if (file_chooser->contains(x, y))
+	if (file_chooser && file_chooser->contains(x, y))
 		tracking_widget = file_chooser;
 	if (tracking_widget)
 		tracking_widget->mouse_pressed(x, y);
@@ -183,9 +196,7 @@ void SFZQPlugin::mouse_released(int32_t x, int32_t y, int button)
 		return;
 
 	if (tracking_widget && tracking_widget->mouse_released(x, y)) {
-		if (tracking_widget == load_button) {
-			//*** TODO
-			}
+		// If we ever have any buttons in the main UI, handle them here.
 		}
 	tracking_widget = nullptr;
 	cairo_gui_extension->refresh();
@@ -242,6 +253,22 @@ void SFZQPlugin::process_event(const clap_event_header_t* event)
 				synth->tuning_expression_changed(expression_event->value);
 			}
 			break;
+		}
+}
+
+
+void SFZQPlugin::layout()
+{
+	auto contents_width = gui_width - 2 * margin;
+	filename_label->rect = { margin, margin, contents_width, filename_label_height };
+	if (progress_bar) {
+		progress_bar->rect = {
+			margin, margin + filename_label_height + spacing,
+			contents_width, progress_bar_height };
+		}
+	if (file_chooser) {
+		file_chooser->rect = { margin, margin, 0, 0 };
+		file_chooser->resize_to(contents_width, gui_height - 2 * margin);
 		}
 }
 

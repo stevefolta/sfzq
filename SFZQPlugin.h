@@ -5,7 +5,8 @@
 class SFZSynth;
 class Widget;
 class FileChooser;
-class Button;
+class Label;
+class ProgressBar;
 
 
 class SFZQPlugin : public CLAPPlugin {
@@ -34,15 +35,17 @@ class SFZQPlugin : public CLAPPlugin {
 
 	protected:
 		enum {
-			gui_width = 500,
-			gui_height = 300,
+			default_gui_width = 500,
+			default_gui_height = 300,
 			};
 
 		SFZSynth* synth = nullptr;
 
+		Label* filename_label = nullptr;
+		ProgressBar* progress_bar = nullptr;;
 		FileChooser* file_chooser = nullptr;
-		Button* load_button = nullptr;
 		Widget* tracking_widget = nullptr;
+		uint32_t gui_width = default_gui_width, gui_height = default_gui_height;
 
 		class CairoGUI : public ::CairoGUI {
 			public:
@@ -57,5 +60,6 @@ class SFZQPlugin : public CLAPPlugin {
 		CairoGUI cairo_gui;
 
 		void process_event(const clap_event_header_t* event);
+		void layout();
 	};
 

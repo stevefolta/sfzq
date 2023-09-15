@@ -5,7 +5,7 @@
 #include <string>
 
 
-class Label : Widget {
+class Label : public Widget {
 	public:
 		Label(CairoGUI* gui, std::string label_in, Rect rect = {})
 			: Widget(gui, rect), label(label_in) {}

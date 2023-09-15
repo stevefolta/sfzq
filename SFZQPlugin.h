@@ -1,6 +1,7 @@
 #include "CLAPPlugin.h"
 #include "CairoGUI.h"
 #include "CLAPCairoGUIExtension.h"
+#include "MessageQueue.h"
 #include <string>
 #include <thread>
 
@@ -51,6 +52,8 @@ class SFZQPlugin : public CLAPPlugin {
 		FileChooser* file_chooser = nullptr;
 		Widget* tracking_widget = nullptr;
 		uint32_t gui_width = default_gui_width, gui_height = default_gui_height;
+
+		MessageQueue load_to_main_queue;
 
 		class CairoGUI : public ::CairoGUI {
 			public:

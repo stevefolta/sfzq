@@ -13,6 +13,7 @@
 #include "CLAPStateExtension.h"
 #include "CLAPStream.h"
 #include "CLAPOutBuffer.h"
+#include "Messages.h"
 #include <thread>
 #include <iostream>
 
@@ -24,7 +25,7 @@ static const double file_chooser_alpha = 0.9;
 
 
 SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host)
-	: CLAPPlugin(descriptor, host), cairo_gui(this)
+	: CLAPPlugin(descriptor, host), load_to_main_queue(20), cairo_gui(this)
 {
 	posix_fd_extension = new CLAPPosixFDExtension(this);
 	cairo_gui_extension = new CLAPCairoGUIExtension(this);
@@ -231,7 +232,11 @@ void SFZQPlugin::mouse_moved(int32_t x, int32_t y)
 
 void SFZQPlugin::main_thread_tick()
 {
-	/***/
+	auto message = load_to_main_queue.pop_front();
+	if (message.id == SampleLoadComplete) {
+		delete progress_bar;
+		progress_bar = nullptr;
+		}
 }
 
 
@@ -334,7 +339,12 @@ void SFZQPlugin::load_sfx(std::string path)
 
 void SFZQPlugin::load_samples()
 {
-	loading_sound->load_samples(&progress_bar->current);
+	loading_sound->load_samples(progress_bar ? &progress_bar->current : nullptr);
+
+	// Let the main thread know we're done.
+	load_to_main_queue.send(SampleLoadComplete);
+	if (host)
+		host->request_callback(host);
 }
 
 

@@ -5,7 +5,7 @@
 
 inline double decibels_to_gain(double decibels)
 {
-	return pow(10.0, decibels * 0.5);
+	return pow(10.0, decibels * 0.05);
 }
 
 inline double gain_to_decibels(double gain)

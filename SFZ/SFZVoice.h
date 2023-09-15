@@ -42,7 +42,7 @@ class SFZVoice {
 
 	protected:
 		int trigger;
-		SFZRegion* region;
+		SFZRegion* region = nullptr;
 		int cur_note;
 		double cur_tuning_expression;
 		double pitch_ratio;

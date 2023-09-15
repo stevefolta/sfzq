@@ -3,10 +3,11 @@
 #include "SFZRegion.h"
 #include "SFZSample.h"
 #include "SampleBuffer.h"
+#include "CLAPOutBuffer.h"
 #include "Decibels.h"
 #include <sstream>
 #include <math.h>
-#include "CLAPOutBuffer.h"
+#include <iostream>
 
 static const float global_gain = -1.0;
 
@@ -61,7 +62,7 @@ void SFZVoice::start_note(
 	velocity_gain_dB *= region->amp_veltrack / 100.0;
 	note_gain_dB += velocity_gain_dB;
 	note_gain_left = note_gain_right = decibels_to_gain(note_gain_dB);
-	// The SFZ spec is silent about the pan curve, but a 3d_b pan law seems
+	// The SFZ spec is silent about the pan curve, but a 3dB pan law seems
 	// common.  This sqrt() curve matches what Dimension LE does; Alchemy Free
 	// seems closer to sin(adjusted_pan * pi/2).
 	double adjusted_pan = (region->pan + 100.0) / 200.0;

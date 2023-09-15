@@ -301,6 +301,7 @@ void SFZQPlugin::main_thread_tick()
 
 	message = load_to_main_queue.pop_front();
 	if (message.id == SampleLoadComplete) {
+		sound_path = loading_sound->get_path();
 		delete progress_bar;
 		progress_bar = nullptr;
 		main_to_audio_queue.send(UseSound, loading_sound);
@@ -309,16 +310,24 @@ void SFZQPlugin::main_thread_tick()
 }
 
 
-bool SFZQPlugin::save_state(const clap_ostream_t* stream)
+bool SFZQPlugin::save_state(const clap_ostream_t* clap_stream)
 {
-	/***/
-	return true;
+	CLAPOutStream stream(clap_stream);
+	stream.write_uint32(1); 	// Version.
+	stream.write_string(sound_path);
+	return stream.ok;
 }
 
-bool SFZQPlugin::load_state(const clap_istream_t* stream)
+bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 {
-	/***/
-	return true;
+	CLAPInStream stream(clap_stream);
+	int version = stream.read_uint32();
+	if (!stream.ok || version != 1)
+		return false;
+	auto path = stream.read_string();
+	if (stream.ok && !path.empty())
+		load_sfx(path);
+	return stream.ok;
 }
 
 

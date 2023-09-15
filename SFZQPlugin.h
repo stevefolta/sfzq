@@ -49,6 +49,7 @@ class SFZQPlugin : public CLAPPlugin {
 			};
 
 		SFZSynth* synth = nullptr;
+		std::string sound_path;
 		SFZSound* loading_sound = nullptr;
 		std::thread load_samples_thread;
 

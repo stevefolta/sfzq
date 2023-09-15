@@ -26,6 +26,7 @@ class SFZSound {
 		int num_regions() { return regions.size(); }
 		SFZRegion* region_at(int index) { return regions[index]; }
 
+		std::string get_path() { return path; }
 		std::string get_errors_string();
 
 		virtual int num_subsounds();

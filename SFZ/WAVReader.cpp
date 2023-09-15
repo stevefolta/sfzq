@@ -124,7 +124,7 @@ WAVReader::Loop WAVReader::loop(uint32_t index)
 int32_t WAVReader::read_dword()
 {
 	int32_t raw_dword;
-	file >> raw_dword;
+	file.read((char*) &raw_dword, sizeof(raw_dword));
 	const uint8_t* data = (const uint8_t*) &raw_dword;
 	uint32_t result =
 		((uint32_t) data[3]) << 24 |
@@ -137,7 +137,7 @@ int32_t WAVReader::read_dword()
 int16_t WAVReader::read_word()
 {
 	int16_t raw_word;
-	file >> raw_word;
+	file.read((char*) &raw_word, sizeof(raw_word));
 	const uint8_t* data = (const uint8_t*) &raw_word;
 	uint16_t result =
 		((uint16_t) data[1]) << 8 |

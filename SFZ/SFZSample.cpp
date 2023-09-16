@@ -4,7 +4,6 @@
 #include <iostream>
 
 
-
 bool SFZSample::load()
 {
 	WAVReader reader(path);

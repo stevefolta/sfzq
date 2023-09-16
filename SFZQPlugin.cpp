@@ -26,7 +26,7 @@ static const double file_chooser_alpha = 0.9;
 
 SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host)
 	: CLAPPlugin(descriptor, host),
-	main_to_audio_queue(20), audio_to_main_queue(20), load_to_main_queue(20),
+	main_to_audio_queue(20), audio_to_main_queue(20), load_to_main_queue(100),
 	cairo_gui(this)
 {
 	posix_fd_extension = new CLAPPosixFDExtension(this);
@@ -299,14 +299,23 @@ void SFZQPlugin::main_thread_tick()
 		delete (SFZSound*) message.param;
 		}
 
-	message = load_to_main_queue.pop_front();
-	if (message.id == SampleLoadComplete) {
-		sound_path = loading_sound->get_path();
-		delete progress_bar;
-		progress_bar = nullptr;
-		main_to_audio_queue.send(UseSound, loading_sound);
-		loading_sound = nullptr;
+	while (true) {
+		message = load_to_main_queue.pop_front();
+		if (message.id < 0)
+			break;
+		if (message.id == SampleLoadComplete) {
+			sound_path = loading_sound->get_path();
+			delete progress_bar;
+			progress_bar = nullptr;
+			main_to_audio_queue.send(UseSound, loading_sound);
+			loading_sound = nullptr;
+			refresh_requested = true;
+			}
 		}
+
+	bool need_refresh = refresh_requested.exchange(false);
+	if (need_refresh)
+		cairo_gui_extension->refresh();
 }
 
 
@@ -417,7 +426,14 @@ void SFZQPlugin::load_sfx(std::string path)
 
 void SFZQPlugin::load_samples()
 {
-	loading_sound->load_samples(progress_bar ? &progress_bar->current : nullptr);
+	loading_sound->load_samples([&](double progress) {
+		if (progress_bar == nullptr)
+			return;
+		progress_bar->current = progress;
+		refresh_requested = true;
+		if (host)
+			host->request_callback(host);
+		});
 
 	// Let the main thread know we're done.
 	load_to_main_queue.send(SampleLoadComplete);

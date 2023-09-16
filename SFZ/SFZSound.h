@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <functional>
 
 class SFZSample;
 
@@ -19,7 +20,7 @@ class SFZSound {
 		void add_unsupported_opcode(const std::string& opcode);
 
 		virtual void load_regions();
-		virtual void load_samples(double* progress_var = NULL);
+		virtual void load_samples(std::function<void(double)> progress_fn = {});
 
 		SFZRegion* get_region_for(
 			int note, int velocity, SFZRegion::Trigger trigger = SFZRegion::attack);

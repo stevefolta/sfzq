@@ -4,6 +4,7 @@
 #include "MessageQueue.h"
 #include <string>
 #include <thread>
+#include <atomic>
 
 class SFZSynth;
 class SFZSound;
@@ -52,6 +53,7 @@ class SFZQPlugin : public CLAPPlugin {
 		std::string sound_path;
 		SFZSound* loading_sound = nullptr;
 		std::thread load_samples_thread;
+		std::atomic_bool refresh_requested = false;
 
 		Label* filename_label = nullptr;
 		ProgressBar* progress_bar = nullptr;;

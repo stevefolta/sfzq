@@ -265,6 +265,7 @@ void CLAPCairoGUIExtension::process_x11_event(XEvent* event)
 void CLAPCairoGUIExtension::put_image()
 {
 	cairo_surface_flush(surface);
+	XFlush(display);
 }
 
 

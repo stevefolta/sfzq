@@ -70,10 +70,10 @@ void SFZSound::load_regions()
 }
 
 
-void SFZSound::load_samples(double* progress_var)
+void SFZSound::load_samples(std::function<void(double)> progress_fn)
 {
-	if (progress_var)
-		*progress_var = 0.0;
+	if (progress_fn)
+		progress_fn(0.0);
 
 	double num_samples_loaded = 1.0, num_samples = samples.size();
 	for (const auto& kv: samples) {
@@ -83,12 +83,12 @@ void SFZSound::load_samples(double* progress_var)
 			add_error("Couldn't load sample \"" + sample->short_name() + "\"");
 
 		num_samples_loaded += 1.0;
-		if (progress_var)
-			*progress_var = num_samples_loaded / num_samples;
+		if (progress_fn)
+			progress_fn(num_samples_loaded / num_samples);
 		}
 
-	if (progress_var)
-		*progress_var = 1.0;
+	if (progress_fn)
+		progress_fn(1.0);
 }
 
 

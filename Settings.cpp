@@ -26,6 +26,7 @@ class SettingsParser {
 	protected:
 		const char*	p;
 		const char*	end;
+		std::ostringstream errors;
 
 		std::string_view	next_token();
 		bool	is_identifier(std::string_view token) { return isalpha(token[0]); }
@@ -49,7 +50,7 @@ void SettingsParser::parse_setting(std::string_view setting_name, std::string_vi
 			settings.num_voices = value;
 		}
 	else
-		std::cerr << "Unknown setting: " << setting_name << "." << std::endl;
+		errors << "Unknown setting: " << setting_name << "." << std::endl;
 }
 
 
@@ -67,23 +68,25 @@ void SettingsParser::parse()
 		// Settings have the form "<name> = <value>".
 		if (!is_identifier(token)) {
 			std::stringstream message;
-			std::cerr << "Error in settings file: not a setting name: \"" << token << '"' << std::endl;
+			errors << "Error in settings file: not a setting name: \"" << token << '"' << std::endl;
 			return;
 			}
 		std::string_view setting_name = token;
 		if (next_token() != "=") {
-			std::cerr << "Error in settings file: missing '=' for \"" << setting_name << "\" setting." << std::endl;
+			errors << "Error in settings file: missing '=' for \"" << setting_name << "\" setting." << std::endl;
 			return;
 			}
 		std::string_view value_token = next_token();
 		if (value_token.empty()) {
-			std::cerr << "Error in settings file: missing value for \"" << setting_name << "\" setting." << std::endl;
+			errors << "Error in settings file: missing value for \"" << setting_name << "\" setting." << std::endl;
 			return;
 			}
 
 		// Set the setting.
 		parse_setting(setting_name, value_token);
 		}
+
+	settings.errors += errors.str();
 }
 
 
@@ -121,7 +124,7 @@ std::string_view SettingsParser::next_token()
 		char quote_char = c;
 		while (true) {
 			if (p >= end) {
-				std::cerr << "Error in settings file: unterminated string." << std::endl;
+				errors << "Error in settings file: unterminated string." << std::endl;
 				return "";
 				}
 			c = *p++;
@@ -130,7 +133,7 @@ std::string_view SettingsParser::next_token()
 			if (c == '\\') {
 				// Consume the next character.
 				if (p >= end) {
-					std::cerr << "Error in settings file: unterminated string." << std::endl;
+					errors << "Error in settings file: unterminated string." << std::endl;
 					return "";
 					}
 				p += 1;
@@ -154,7 +157,7 @@ std::string_view SettingsParser::next_token()
 			// Hex number.
 			p += 1; 	// Skip the "x".
 			if (p >= end || !isxdigit(*p)) {
-				std::cerr << "Error in settings file: incomplete hex number." << std::endl;
+				errors << "Error in settings file: incomplete hex number." << std::endl;
 				return "";
 				}
 			while (p < end) {
@@ -180,7 +183,7 @@ std::string_view SettingsParser::next_token()
 
 	else {
 		// Unknown.
-		std::cerr << "Error in settings file: invalid character: '" << c << "'" << std::endl;
+		errors << "Error in settings file: invalid character: '" << c << "'" << std::endl;
 		return "";
 		}
 
@@ -210,7 +213,7 @@ uint32_t SettingsParser::parse_uint32(std::string_view token)
 	char* end_ptr = nullptr;
 	uint32_t result = strtoul(std::string(token).c_str(), &end_ptr, 0);
 	if (*end_ptr != 0) {
-		std::cerr << "Error in settings file: not a number: " << token << std::endl;
+		errors << "Error in settings file: not a number: " << token << std::endl;
 		result = 0;
 		}
 	return result;
@@ -223,7 +226,7 @@ float SettingsParser::parse_float(std::string_view token)
 	float result = strtof(std::string(token).c_str(), &end_ptr);
 	if (*end_ptr != 0) {
 		result = 0.0;
-		std::cerr << "Error in settings file: not a floating-point number: " << token << std::endl;
+		errors << "Error in settings file: not a floating-point number: " << token << std::endl;
 		}
 	return result;
 }
@@ -235,7 +238,7 @@ bool SettingsParser::parse_bool(std::string_view token)
 		return true;
 	else if (token == "false")
 		return false;
-	std::cerr << "Error in settings file: not a boolean: " << token << std::endl;
+	errors << "Error in settings file: not a boolean: " << token << std::endl;
 	return false;
 }
 

@@ -46,6 +46,7 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	filename_label = new Label(&cairo_gui, "Click here to open SFZ file...");
 	filename_label->color = { 0.5, 0.5, 0.5 };
 	error_box = new TextBox(&cairo_gui);
+	error_box->text = settings.errors;
 	layout();
 }
 

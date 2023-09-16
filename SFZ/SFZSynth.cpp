@@ -8,7 +8,7 @@
 SFZSynth::SFZSynth(int num_voices)
 {
 	while (num_voices-- > 0)
-		voices.push_back(new SFZVoice());
+		voices.push_back(new SFZVoice(this));
 }
 
 SFZSynth::~SFZSynth()
@@ -31,7 +31,7 @@ void SFZSynth::reset()
 }
 
 
-void SFZSynth::note_on(int note, double velocity)
+void SFZSynth::note_on(int note, double velocity, int channel, int note_id)
 {
 	int midi_velocity = (int) (velocity * 127);
 
@@ -74,7 +74,7 @@ void SFZSynth::note_on(int note, double velocity)
 				SFZVoice* voice = find_free_voice(note, is_note_stealing_enabled());
 				if (voice) {
 					voice->set_region(region);
-					voice->start_note(note, velocity, sound, cur_tuning_expression);
+					voice->start_note(note, velocity, channel, note_id, sound, cur_tuning_expression);
 					}
 				}
 			}
@@ -84,7 +84,7 @@ void SFZSynth::note_on(int note, double velocity)
 }
 
 
-void SFZSynth::note_off(int note, double velocity, bool allow_tail_off)
+void SFZSynth::note_off(int note, double velocity, int channel, int note_id, bool allow_tail_off)
 {
 	// Stop any voices playing this note.
 	for (auto voice: voices) {
@@ -101,7 +101,7 @@ void SFZSynth::note_off(int note, double velocity, bool allow_tail_off)
 			SFZVoice* voice = find_free_voice(note, false);
 			if (voice) {
 				voice->set_region(region);
-				voice->start_note(note, note_velocities[note] / 127.0, sound, cur_tuning_expression);
+				voice->start_note(note, note_velocities[note] / 127.0, channel, note_id, sound, cur_tuning_expression);
 				}
 			}
 		}
@@ -156,6 +156,13 @@ std::string SFZSynth::voice_info_string()
 	for (auto& line: lines)
 		result << line << std::endl;
 	return result.str();
+}
+
+
+void SFZSynth::note_ended(int note, int channel, int note_id)
+{
+	if (note_off_fn)
+		note_off_fn(note, channel, note_id);
 }
 
 

@@ -147,6 +147,21 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 	// If we had parameters, this is where we'd send parameter changes from the
 	// GUI back to the host.
 
+	// Set up to send note-end events back to the host.
+	synth->set_note_off_fn([&](int note, int channel, int note_id) {
+		clap_event_note_t event = {};
+		event.header.size = sizeof(event);
+		event.header.time = 0;
+		event.header.space_id = CLAP_CORE_EVENT_SPACE_ID;
+		event.header.type = CLAP_EVENT_NOTE_END;
+		event.header.flags = 0;
+		event.key = note;
+		event.note_id = note_id;
+		event.channel = channel;
+		event.port_index = 0;
+		process->out_events->try_push(process->out_events, &event.header);
+		});
+
 	// Handle messages from the main thread.
 	auto message = main_to_audio_queue.pop_front();
 	if (message.id == UseSound) {
@@ -185,9 +200,7 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 		cur_frame = next_event_frame;
 		}
 
-	// Send note-end events back to the host.
-	//*** TODO
-
+	synth->set_note_off_fn({});
 	return CLAP_PROCESS_CONTINUE;
 }
 
@@ -356,7 +369,7 @@ void SFZQPlugin::process_event(const clap_event_header_t* event)
 		case CLAP_EVENT_NOTE_ON:
 			{
 			auto note_event = (const clap_event_note_t*) event;
-			synth->note_on(note_event->key, note_event->velocity);
+			synth->note_on(note_event->key, note_event->velocity, note_event->channel, note_event->note_id);
 			}
 			break;
 		case CLAP_EVENT_NOTE_OFF:
@@ -364,7 +377,7 @@ void SFZQPlugin::process_event(const clap_event_header_t* event)
 			{
 			auto note_event = (const clap_event_note_t*) event;
 			synth->note_off(
-				note_event->key, note_event->velocity,
+				note_event->key, note_event->velocity, note_event->channel, note_event->note_id,
 				(event->type == CLAP_EVENT_NOTE_OFF));
 			}
 			break;

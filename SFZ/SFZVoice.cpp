@@ -2,6 +2,7 @@
 #include "SFZSound.h"
 #include "SFZRegion.h"
 #include "SFZSample.h"
+#include "SFZSynth.h"
 #include "SampleBuffer.h"
 #include "CLAPOutBuffer.h"
 #include "Decibels.h"
@@ -12,8 +13,8 @@
 static const float global_gain = -1.0;
 
 
-SFZVoice::SFZVoice()
-	: region(nullptr)
+SFZVoice::SFZVoice(SFZSynth* synth_in)
+	: synth(synth_in), region(nullptr)
 {
 	ampeg.set_exponential_decay(true);
 }
@@ -25,8 +26,10 @@ SFZVoice::~SFZVoice()
 
 
 void SFZVoice::start_note(
-	const int note_in,
-	const float float_velocity,
+	int note_in,
+	float float_velocity,
+	int channel,
+	int note_id,
 	SFZSound* sound,
 	double current_tuning_expression)
 {
@@ -50,6 +53,8 @@ void SFZVoice::start_note(
 
 	// Pitch.
 	cur_note = note_in;
+	cur_channel = channel;
+	cur_note_id = note_id;
 	cur_tuning_expression = current_tuning_expression;
 	calc_pitch_ratio();
 
@@ -130,6 +135,8 @@ void SFZVoice::stop_note_quick()
 
 void SFZVoice::kill_note()
 {
+	if (region)
+		synth->note_ended(cur_note, cur_channel, cur_note_id);
 	region = nullptr;
 }
 

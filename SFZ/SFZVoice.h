@@ -5,17 +5,20 @@
 
 class SFZSound;
 class SFZRegion;
+class SFZSynth;
 class OutBuffer;
 
 
 class SFZVoice {
 	public:
-		SFZVoice();
+		SFZVoice(SFZSynth* synth);
 		~SFZVoice();
 
 		void start_note(
-			const int note,
-			const float velocity,
+			int note,
+			float velocity,
+			int channel,
+			int note_id,
 			SFZSound* sound,
 			double current_tuning_expression);
 		void stop_note(float velocity, const bool allow_tail_off);
@@ -41,9 +44,10 @@ class SFZVoice {
 		double sample_rate = 0.0;
 
 	protected:
+		SFZSynth* synth;
 		int trigger;
 		SFZRegion* region = nullptr;
-		int cur_note;
+		int cur_note, cur_channel, cur_note_id;
 		double cur_tuning_expression;
 		double pitch_ratio;
 		float note_gain_left, note_gain_right;

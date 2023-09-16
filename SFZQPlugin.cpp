@@ -40,7 +40,7 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 
 	settings.read_settings_files();
 
-	synth = new SFZSynth(32);
+	synth = new SFZSynth(settings.num_voices);
 
 	// GUI.
 	filename_label = new Label(&cairo_gui, "Click here to open SFZ file...");

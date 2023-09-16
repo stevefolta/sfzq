@@ -30,18 +30,23 @@ class SettingsParser {
 		std::string_view	next_token();
 		bool	is_identifier(std::string_view token) { return isalpha(token[0]); }
 		std::string	unquote_string(std::string_view token);
-		uint32_t	parse_uint32(std::string token);
-		float	parse_float(std::string token);
+		uint32_t	parse_uint32(std::string_view token);
+		float	parse_float(std::string_view token);
 		bool	parse_bool(std::string_view token);
 	};
 
 
 void SettingsParser::parse_setting(std::string_view setting_name, std::string_view value_token)
 {
-	if (setting_name == "samples-directory" || setting_name == "samples_directory") {
+	if (setting_name == "samples-directory") {
 		settings.samples_directory = unquote_string(value_token);
 		if (!settings.samples_directory.empty() && settings.samples_directory[0] == '~')
 			settings.samples_directory = Settings::home_path() + settings.samples_directory.substr(1);
+		}
+	else if (setting_name == "num-voices") {
+		auto value = parse_uint32(value_token);
+		if (value >= 0)
+			settings.num_voices = value;
 		}
 	else
 		std::cerr << "Unknown setting: " << setting_name << "." << std::endl;
@@ -200,10 +205,10 @@ std::string SettingsParser::unquote_string(std::string_view token)
 }
 
 
-uint32_t SettingsParser::parse_uint32(std::string token)
+uint32_t SettingsParser::parse_uint32(std::string_view token)
 {
 	char* end_ptr = nullptr;
-	uint32_t result = strtoul(token.c_str(), &end_ptr, 0);
+	uint32_t result = strtoul(std::string(token).c_str(), &end_ptr, 0);
 	if (*end_ptr != 0) {
 		std::cerr << "Error in settings file: not a number: " << token << std::endl;
 		result = 0;
@@ -212,10 +217,10 @@ uint32_t SettingsParser::parse_uint32(std::string token)
 }
 
 
-float SettingsParser::parse_float(std::string token)
+float SettingsParser::parse_float(std::string_view token)
 {
 	char* end_ptr = nullptr;
-	float result = strtof(token.c_str(), &end_ptr);
+	float result = strtof(std::string(token).c_str(), &end_ptr);
 	if (*end_ptr != 0) {
 		result = 0.0;
 		std::cerr << "Error in settings file: not a floating-point number: " << token << std::endl;

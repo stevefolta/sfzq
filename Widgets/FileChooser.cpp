@@ -40,6 +40,10 @@ void FileChooser::set_path(std::string new_path)
 	file_list->set_dir(new_path);
 }
 
+void FileChooser::set_file_filter(std::function<bool(const char*)> new_file_filter)
+{
+	file_list->file_filter = new_file_filter;
+}
 
 void FileChooser::set_font(const char* font, double size, cairo_font_weight_t weight)
 {

@@ -5,6 +5,7 @@
 #include <cairo/cairo.h>
 #include <vector>
 #include <string>
+#include <functional>
 
 class CairoGUI;
 class Scrollbar;
@@ -14,6 +15,8 @@ class FileList : public Widget {
 	public:
 		FileList(CairoGUI* gui, Rect rect);
 		~FileList();
+
+		std::function<bool(const char*)> file_filter;
 
 		void set_dir(std::string path);
 		void set_font(const char* font, double size, cairo_font_weight_t weight);

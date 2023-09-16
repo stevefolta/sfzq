@@ -55,7 +55,8 @@ void FileList::set_dir(std::string path)
 			if (stat((path + "/" + entry->d_name).c_str(), &stat_buf) == 0)
 				is_dir = ((stat_buf.st_mode & S_IFMT) == S_IFDIR);
 			}
-		entries.push_back({ entry->d_name, is_dir });
+		if (is_dir || !file_filter || file_filter(entry->d_name))
+			entries.push_back({ entry->d_name, is_dir });
 		}
 
 	closedir(dir);

@@ -17,6 +17,7 @@
 #include "Messages.h"
 #include "Settings.h"
 #include <thread>
+#include <string_view>
 #include <iostream>
 
 static const double filename_label_height = 24.0;
@@ -419,6 +420,14 @@ void SFZQPlugin::open_file_chooser()
 	file_chooser = new FileChooser(&cairo_gui, {});
 	if (!settings.samples_directory.empty())
 		file_chooser->set_path(settings.samples_directory);
+	file_chooser->set_file_filter([](const char* filename_in) {
+		std::string_view filename(filename_in);
+		auto dot_pos = filename.rfind('.');
+		if (dot_pos == std::string_view::npos)
+			return false;
+		auto extension = filename.substr(dot_pos + 1);
+		return extension == "sfz" || extension == "SFZ";
+		});
 	file_chooser->set_ok_fn([&](std::string path) {
 		delete file_chooser;
 		file_chooser = nullptr;

@@ -2,6 +2,7 @@
 #include "CairoGUI.h"
 #include "Scrollbar.h"
 #include <dirent.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <algorithm>
 #include <iostream>
@@ -45,7 +46,15 @@ void FileList::set_dir(std::string path)
 		bool is_dir = false;
 #ifdef _DIRENT_HAVE_D_TYPE
 		is_dir = entry->d_type == DT_DIR;
+		bool know_type = entry->d_type != DT_UNKNOWN;
+#else
+		const bool know_type = false;
 #endif
+		if (!know_type) {
+			struct stat stat_buf;
+			if (stat((path + "/" + entry->d_name).c_str(), &stat_buf) == 0)
+				is_dir = ((stat_buf.st_mode & S_IFMT) == S_IFDIR);
+			}
 		entries.push_back({ entry->d_name, is_dir });
 		}
 

@@ -76,12 +76,9 @@ bool WAVReader::read_samples_into(uint64_t start, uint64_t num_samples, SampleBu
 	if (!file.good())
 		return false;
 
-	for (int channel = 0; channel < num_channels; ++channel) {
-		auto buf_p = buffer->channel_start(channel);
-		file.read((char*) buf_p, num_samples * bytes_per_sample);
-		if (!file.good())
-			return false;
-		}
+	file.read((char*) buffer->channel_start(0), num_samples * bytes_per_sample * num_channels);
+	if (!file.good())
+		return false;
 
 	return true;
 }

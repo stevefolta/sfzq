@@ -15,6 +15,7 @@
 #include "CLAPStream.h"
 #include "CLAPOutBuffer.h"
 #include "Messages.h"
+#include "Settings.h"
 #include <thread>
 #include <iostream>
 
@@ -36,6 +37,8 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	note_ports_extension = new CLAPNotePortsExtension(this);
 	params_extension = new CLAPParamsExtension();
 	state_extension = new CLAPStateExtension(this);
+
+	settings.read_settings_files();
 
 	synth = new SFZSynth(32);
 
@@ -400,6 +403,8 @@ void SFZQPlugin::open_file_chooser()
 		return;
 
 	file_chooser = new FileChooser(&cairo_gui, {});
+	if (!settings.samples_directory.empty())
+		file_chooser->set_path(settings.samples_directory);
 	file_chooser->set_ok_fn([&](std::string path) {
 		delete file_chooser;
 		file_chooser = nullptr;

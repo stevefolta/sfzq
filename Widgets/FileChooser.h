@@ -14,6 +14,8 @@ class FileChooser : public Widget {
 		FileChooser(CairoGUI* gui, Rect rect);
 		~FileChooser();
 
+		void set_path(std::string new_path);
+
 		void set_ok_fn(std::function<void(std::string path)> fn) { ok_fn = fn; }
 		void set_cancel_fn(std::function<void(void)> fn) { cancel_fn = fn; }
 		void set_font(const char* font, double size, cairo_font_weight_t weight);

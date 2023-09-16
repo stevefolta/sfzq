@@ -34,6 +34,13 @@ FileChooser::~FileChooser()
 }
 
 
+void FileChooser::set_path(std::string new_path)
+{
+	path = new_path;
+	file_list->set_dir(new_path);
+}
+
+
 void FileChooser::set_font(const char* font, double size, cairo_font_weight_t weight)
 {
 	file_list->set_font(font, size, weight);

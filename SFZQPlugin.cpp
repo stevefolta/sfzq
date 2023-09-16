@@ -5,6 +5,7 @@
 #include "FileChooser.h"
 #include "Label.h"
 #include "ProgressBar.h"
+#include "TextBox.h"
 #include "CLAPPosixFDExtension.h"
 #include "CLAPCairoGUIExtension.h"
 #include "CLAPAudioPortsExtension.h"
@@ -41,6 +42,7 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	// GUI.
 	filename_label = new Label(&cairo_gui, "Click here to open SFZ file...");
 	filename_label->color = { 0.5, 0.5, 0.5 };
+	error_box = new TextBox(&cairo_gui);
 	layout();
 }
 
@@ -48,6 +50,7 @@ SFZQPlugin::~SFZQPlugin()
 {
 	delete filename_label;
 	delete progress_bar;
+	delete error_box;
 	delete file_chooser;
 
 	if (load_samples_thread.joinable())
@@ -233,7 +236,7 @@ void SFZQPlugin::paint_gui()
 	filename_label->paint();
 	if (progress_bar)
 		progress_bar->paint();
-	/***/
+	error_box->paint();
 
 	if (file_chooser) {
 		cairo_push_group(cairo);
@@ -307,6 +310,8 @@ void SFZQPlugin::main_thread_tick()
 			sound_path = loading_sound->get_path();
 			delete progress_bar;
 			progress_bar = nullptr;
+			error_box->text = loading_sound->get_errors_string();
+			layout();
 			main_to_audio_queue.send(UseSound, loading_sound);
 			loading_sound = nullptr;
 			refresh_requested = true;
@@ -373,11 +378,14 @@ void SFZQPlugin::layout()
 {
 	auto contents_width = gui_width - 2 * margin;
 	filename_label->rect = { margin, margin, contents_width, filename_label_height };
+	double top = margin + filename_label_height + spacing;
 	if (progress_bar) {
 		progress_bar->rect = {
-			margin, margin + filename_label_height + spacing,
+			margin, top,
 			contents_width, progress_bar_height };
+		top += progress_bar_height + spacing;
 		}
+	error_box->rect = { margin, top, contents_width, gui_height - margin - top };
 	if (file_chooser) {
 		file_chooser->rect = { margin, margin, 0, 0 };
 		file_chooser->resize_to(contents_width, gui_height - 2 * margin);

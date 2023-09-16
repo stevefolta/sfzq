@@ -12,6 +12,7 @@ class Widget;
 class FileChooser;
 class Label;
 class ProgressBar;
+class TextBox;
 
 
 class SFZQPlugin : public CLAPPlugin {
@@ -58,6 +59,7 @@ class SFZQPlugin : public CLAPPlugin {
 		Label* filename_label = nullptr;
 		ProgressBar* progress_bar = nullptr;;
 		FileChooser* file_chooser = nullptr;
+		TextBox* error_box = nullptr;
 		Widget* tracking_widget = nullptr;
 		uint32_t gui_width = default_gui_width, gui_height = default_gui_height;
 

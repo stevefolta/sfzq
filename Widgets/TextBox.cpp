@@ -17,9 +17,12 @@ void TextBox::paint()
 	cairo_font_extents(cairo, &font_extents);
 
 	// Draw line-by-line.
-	std::string_view remainder(text);
+	std::string_view remainder = rtrim(text);
 	double baseline = rect.y + font_extents.ascent;
 	while (!remainder.empty()) {
+		if (baseline - font_extents.ascent > rect.y + rect.height)
+			break;
+
 		// Get the next line.
 		std::string_view line;
 		auto pos = remainder.find('\n');
@@ -85,6 +88,19 @@ void TextBox::paint()
 				line_remainder = line_remainder.substr(next_word_start);
 				}
 			}
+		}
+
+	// Were there more lines than fit?
+	if (baseline - font_extents.height + font_extents.descent > rect.y + rect.height) {
+		// Fade it out.
+		double fade_top = rect.y + rect.height - font_extents.height;
+		cairo_rectangle(cairo, rect.x, fade_top, rect.width, font_extents.height);
+		cairo_pattern_t* pattern = cairo_pattern_create_linear(rect.x, fade_top, rect.x, rect.y + rect.height);
+		cairo_pattern_add_color_stop_rgba(pattern, 0.0, 1.0, 1.0, 1.0, 0.0);
+		cairo_pattern_add_color_stop_rgba(pattern, 1.0, 1.0, 1.0, 1.0, 1.0);
+		cairo_set_source(cairo, pattern);
+		cairo_fill(cairo);
+		cairo_pattern_destroy(pattern);
 		}
 
 	cairo_restore(cairo);

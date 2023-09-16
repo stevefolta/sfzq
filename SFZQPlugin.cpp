@@ -315,6 +315,7 @@ void SFZQPlugin::main_thread_tick()
 			main_to_audio_queue.send(UseSound, loading_sound);
 			loading_sound = nullptr;
 			refresh_requested = true;
+			state_extension->host_mark_dirty();
 			}
 		}
 

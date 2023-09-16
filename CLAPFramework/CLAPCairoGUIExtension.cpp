@@ -80,8 +80,10 @@ const void* CLAPCairoGUIExtension::clap_extension()
 
 void CLAPCairoGUIExtension::refresh()
 {
-	plugin->paint_gui();
-	put_image();
+	if (cairo) {
+		plugin->paint_gui();
+		put_image();
+		}
 }
 
 
@@ -264,8 +266,10 @@ void CLAPCairoGUIExtension::process_x11_event(XEvent* event)
 
 void CLAPCairoGUIExtension::put_image()
 {
-	cairo_surface_flush(surface);
-	XFlush(display);
+	if (surface) {
+		cairo_surface_flush(surface);
+		XFlush(display);
+		}
 }
 
 

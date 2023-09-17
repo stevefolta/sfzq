@@ -6,6 +6,7 @@
 #include "FileChooser.h"
 #include "Label.h"
 #include "ProgressBar.h"
+#include "SubsoundWidget.h"
 #include "TextBox.h"
 #include "CLAPPosixFDExtension.h"
 #include "CLAPCairoGUIExtension.h"
@@ -23,6 +24,7 @@
 
 static const double filename_label_height = 24.0;
 static const double progress_bar_height = 20.0;
+static const double subsound_widget_height = 16.0;
 static const double margin = 10.0;
 static const double spacing = 6.0;
 static const double file_chooser_alpha = 0.9;
@@ -56,6 +58,7 @@ SFZQPlugin::~SFZQPlugin()
 {
 	delete filename_label;
 	delete progress_bar;
+	delete subsound_widget;
 	delete error_box;
 	delete file_chooser;
 
@@ -174,6 +177,12 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 				host->request_callback(host);
 			}
 		}
+	else if (message.id == UseSubsound) {
+		synth->use_subsound(message.num);
+		audio_to_main_queue.send(SubsoundChanged);
+		if (host)
+			host->request_callback(host);
+		}
 
 	// Setup rendering.
 	CLAPOutBuffer out_buffer(&process->audio_outputs[0]);
@@ -255,6 +264,8 @@ void SFZQPlugin::paint_gui()
 	filename_label->paint();
 	if (progress_bar)
 		progress_bar->paint();
+	if (subsound_widget)
+		subsound_widget->paint();
 	error_box->paint();
 
 	if (file_chooser) {
@@ -290,6 +301,8 @@ void SFZQPlugin::mouse_pressed(int32_t x, int32_t y, int button)
 		tracking_widget = file_chooser;
 	else if (filename_label->contains(x, y))
 		open_file_chooser();
+	else if (subsound_widget && subsound_widget->contains(x, y))
+		tracking_widget = subsound_widget;
 	if (tracking_widget)
 		tracking_widget->mouse_pressed(x, y);
 	cairo_gui_extension->refresh();
@@ -317,8 +330,18 @@ void SFZQPlugin::mouse_moved(int32_t x, int32_t y)
 void SFZQPlugin::main_thread_tick()
 {
 	auto message = audio_to_main_queue.pop_front();
-	if (message.id == DoneWithSound) {
-		delete (SFZSound*) message.param;
+	if (message.id > 0) {
+		switch (message.id) {
+			case DoneWithSound:
+				delete (SFZSound*) message.param;
+				break;
+			case SubsoundChanged:
+				if (subsound_widget) {
+					subsound_widget->update();
+					refresh_requested = true;
+					}
+				break;
+			}
 		}
 
 	while (true) {
@@ -329,6 +352,14 @@ void SFZQPlugin::main_thread_tick()
 			sound_path = loading_sound->get_path();
 			delete progress_bar;
 			progress_bar = nullptr;
+			delete subsound_widget;
+			subsound_widget = nullptr;
+			if (loading_sound->num_subsounds() > 1) {
+				subsound_widget = new SubsoundWidget(&cairo_gui, loading_sound);
+				subsound_widget->select_subsound_fn = [&](int which_subsound) {
+					main_to_audio_queue.send(UseSubsound, which_subsound);
+					};
+				}
 			error_box->text = loading_sound->get_errors_string();
 			layout();
 			main_to_audio_queue.send(UseSound, loading_sound);
@@ -404,6 +435,11 @@ void SFZQPlugin::layout()
 			margin, top,
 			contents_width, progress_bar_height };
 		top += progress_bar_height + spacing;
+		}
+	if (subsound_widget) {
+		subsound_widget->rect = { margin, top, contents_width, subsound_widget_height };
+		subsound_widget->layout();
+		top += subsound_widget_height + spacing;
 		}
 	error_box->rect = { margin, top, contents_width, gui_height - margin - top };
 	if (file_chooser) {

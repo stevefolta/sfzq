@@ -21,6 +21,7 @@ class SFZSynth {
 			}
 		void set_note_off_fn(std::function<void(int note, int channel, int note_id)> new_fn) { note_off_fn = new_fn; }
 		void set_sample_rate(double new_sample_rate);
+		void use_subsound(int which_subsound);
 		void reset();
 
 		void note_on(int note, double velocity, int channel, int note_id);

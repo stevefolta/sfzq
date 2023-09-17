@@ -12,6 +12,8 @@ class Button : public Widget {
 			const char* label_in)
 			: Widget(gui, rect), label(label_in)
 		{}
+		Button(CairoGUI* gui, const char* label_in, Rect rect = {})
+			: Widget(gui, rect), label(label_in) {}
 
 		void set_font(const char* font_in, cairo_font_weight_t weight_in) {
 			font = font_in;

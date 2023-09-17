@@ -1,6 +1,7 @@
 PLUGIN := sfzq.clap
 SOURCES := sfzq.cpp
 SOURCES += SFZQPlugin.cpp MessageQueue.cpp
+SOURCES += SubsoundWidget.cpp
 SOURCES += Settings.cpp
 SFZ_DIR := SFZPlayer
 SFZ_SOURCES += SFZSynth.cpp SFZVoice.cpp

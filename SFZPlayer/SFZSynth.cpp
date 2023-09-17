@@ -4,7 +4,6 @@
 #include <sstream>
 
 
-
 SFZSynth::SFZSynth(int num_voices)
 {
 	while (num_voices-- > 0)
@@ -22,6 +21,12 @@ void SFZSynth::set_sample_rate(double new_sample_rate)
 {
 	for (auto voice: voices)
 		voice->sample_rate = new_sample_rate;
+}
+
+void SFZSynth::use_subsound(int which_subsound)
+{
+	if (sound)
+		sound->use_subsound(which_subsound);
 }
 
 void SFZSynth::reset()

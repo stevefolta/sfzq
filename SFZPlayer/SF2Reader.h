@@ -8,6 +8,7 @@
 class SF2Sound;
 class SFZRegion;
 class SFZSample;
+class SampleBuffer;
 
 
 class SF2Reader {
@@ -15,14 +16,14 @@ class SF2Reader {
 		SF2Reader(SF2Sound* sound, std::string path);
 		~SF2Reader();
 
-		void	read();
-		SampleBuffer*	read_samples(double* progress_var = NULL);
+		void read();
+		SampleBuffer* read_samples(double* progress_var = NULL);
 
 	protected:
-		SF2Sound*	sound;
-		std::fstream*	file;
+		SF2Sound* sound;
+		std::fstream* file;
 
-		void	add_generator_to_region(
+		void add_generator_to_region(
 			word genOper, SF2::genAmountType* amount, SFZRegion* region);
 	};
 

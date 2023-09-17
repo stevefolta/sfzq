@@ -110,42 +110,42 @@ void SF2::shdr::read_from(std::istream* file)
 
 
 SF2::Hydra::Hydra()
-	: phdrItems(NULL), pbagItems(NULL), pmodItems(NULL), pgenItems(NULL),
-		instItems(NULL), ibagItems(NULL), imodItems(NULL), igenItems(NULL),
-		shdrItems(NULL)
+	: phdr_items(NULL), pbag_items(NULL), pmod_items(NULL), pgen_items(NULL),
+		inst_items(NULL), ibag_items(NULL), imod_items(NULL), igen_items(NULL),
+		shdr_items(NULL)
 {
 }
 
 
 SF2::Hydra::~Hydra()
 {
-	delete phdrItems;
-	delete pbagItems;
-	delete pmodItems;
-	delete pgenItems;
-	delete instItems;
-	delete ibagItems;
-	delete imodItems;
-	delete igenItems;
-	delete shdrItems;
+	delete phdr_items;
+	delete pbag_items;
+	delete pmod_items;
+	delete pgen_items;
+	delete inst_items;
+	delete ibag_items;
+	delete imod_items;
+	delete igen_items;
+	delete shdr_items;
 }
 
 
-void SF2::Hydra::read_from(std::istream* file, int64_t pdtaChunkEnd)
+void SF2::Hydra::read_from(std::istream* file, int64_t pdta_chunk_end)
 {
 	int i, num_items;
 
-	#define handle_chunk(chunkName) 	\
-		if (fourcc_eq(chunk.id, #chunkName)) { 	\
-			num_items = chunk.size / SF2::chunkName::sizeInFile; 	\
-			chunkName##NumItems = num_items; 	\
-			chunkName##Items = new SF2::chunkName[num_items]; 	\
+	#define handle_chunk(chunk_name) 	\
+		if (fourcc_eq(chunk.id, #chunk_name)) { 	\
+			num_items = chunk.size / SF2::chunk_name::size_in_file; 	\
+			chunk_name##_num_items = num_items; 	\
+			chunk_name##_items = new SF2::chunk_name[num_items]; 	\
 			for (i = 0; i < num_items; ++i) 	\
-				chunkName##Items[i].read_from(file); 	\
+				chunk_name##_items[i].read_from(file); 	\
 			} 	\
 		else
 
-	while (file->tellg() < pdtaChunkEnd) {
+	while (file->tellg() < pdta_chunk_end) {
 		RIFFChunk chunk;
 		chunk.read_from(file);
 
@@ -165,12 +165,12 @@ void SF2::Hydra::read_from(std::istream* file, int64_t pdtaChunkEnd)
 }
 
 
-bool SF2::Hydra::IsComplete()
+bool SF2::Hydra::is_complete()
 {
 	return
-		phdrItems && pbagItems && pmodItems && pgenItems &&
-		instItems && ibagItems && imodItems && igenItems &&
-		shdrItems;
+		phdr_items && pbag_items && pmod_items && pgen_items &&
+		inst_items && ibag_items && imod_items && igen_items &&
+		shdr_items;
 }
 
 

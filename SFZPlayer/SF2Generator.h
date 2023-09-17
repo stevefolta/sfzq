@@ -7,7 +7,7 @@ struct SF2Generator {
 		};
 
 	const char* name;
-	Type	type;
+	Type type;
 
 	#define SF2GeneratorValue(name, type)	name
 	enum {

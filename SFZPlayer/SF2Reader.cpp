@@ -1,13 +1,10 @@
 #include "SF2Reader.h"
 #include "SF2Sound.h"
 #include "SFZSample.h"
+#include "SampleBuffer.h"
 #include "RIFF.h"
 #include "SF2.h"
 #include "SF2Generator.h"
-#include "SFZDebug.h"
-#include <fstream>
-
-using namespace SFZero;
 
 
 SF2Reader::SF2Reader(SF2Sound* sound_in, std::string path)
@@ -25,134 +22,133 @@ SF2Reader::~SF2Reader()
 
 void SF2Reader::read()
 {
-	if (file == NULL) {
-		sound->addError("Couldn't open file.");
+	if (file == nullptr) {
+		sound->add_error("Couldn't open file.");
 		return;
 		}
 
 	// Read the hydra.
 	SF2::Hydra hydra;
-	file->setPosition(0);
-	RIFFChunk riffChunk;
-	riffChunk.ReadFrom(file);
-	while (file->getPosition() < riffChunk.End()) {
+	file->seekg(0);
+	RIFFChunk riff_chunk;
+	riff_chunk.read_from(file);
+	while (file->tellg() < riff_chunk.end()) {
 		RIFFChunk chunk;
-		chunk.ReadFrom(file);
-		if (FourCCEquals(chunk.id, "pdta")) {
-			hydra.ReadFrom(file, chunk.End());
+		chunk.read_from(file);
+		if (fourcc_eq(chunk.id, "pdta")) {
+			hydra.read_from(file, chunk.end());
 			break;
 			}
-		chunk.SeekAfter(file);
+		chunk.seek_after(file);
 		}
-	if (!hydra.IsComplete()) {
-		sound->addError("Invalid SF2 file (missing or incomplete hydra).");
+	if (!hydra.is_complete()) {
+		sound->add_error("Invalid SF2 file (missing or incomplete hydra).");
 		return;
 		}
 
 	// Read each preset.
-	for (int whichPreset = 0; whichPreset < hydra.phdrNumItems - 1; ++whichPreset) {
-		SF2::phdr* phdr = &hydra.phdrItems[whichPreset];
+	for (int which_preset = 0; which_preset < hydra.phdr_num_items - 1; ++which_preset) {
+		SF2::phdr* phdr = &hydra.phdr_items[which_preset];
 		SF2Sound::Preset* preset =
 			new SF2Sound::Preset(phdr->presetName, phdr->bank, phdr->preset);
-		sound->addPreset(preset);
+		sound->add_preset(preset);
 
 		// Zones.
 		//*** TODO: Handle global zone (modulators only).
-		int zoneEnd = phdr[1].presetBagNdx;
-		for (int whichZone = phdr->presetBagNdx; whichZone < zoneEnd; ++whichZone) {
-			SF2::pbag* pbag = &hydra.pbagItems[whichZone];
-			SFZRegion presetRegion;
-			presetRegion.clearForRelativeSF2();
+		int zone_end = phdr[1].presetBagNdx;
+		for (int which_zone = phdr->presetBagNdx; which_zone < zone_end; ++which_zone) {
+			SF2::pbag* pbag = &hydra.pbag_items[which_zone];
+			SFZRegion preset_region;
+			preset_region.clear_for_relative_sf2();
 
 			// Generators.
-			int genEnd = pbag[1].genNdx;
-			for (int whichGen = pbag->genNdx; whichGen < genEnd; ++whichGen) {
-				SF2::pgen* pgen = &hydra.pgenItems[whichGen];
+			int gen_end = pbag[1].genNdx;
+			for (int which_gen = pbag->genNdx; which_gen < gen_end; ++which_gen) {
+				SF2::pgen* pgen = &hydra.pgen_items[which_gen];
 
 				// Instrument.
 				if (pgen->genOper == SF2Generator::instrument) {
-					word whichInst = pgen->genAmount.wordAmount;
-					if (whichInst < hydra.instNumItems) {
-						SFZRegion instRegion;
-						instRegion.clearForSF2();
+					word which_inst = pgen->genAmount.wordAmount;
+					if (which_inst < hydra.inst_num_items) {
+						SFZRegion inst_region;
+						inst_region.clear_for_sf2();
 						// Preset generators are supposed to be "relative" modifications of
 						// the instrument settings, but that makes no sense for ranges.
 						// For those, we'll have the instrument's generator take
 						// precedence, though that may not be correct.
-						instRegion.lokey = presetRegion.lokey;
-						instRegion.hikey = presetRegion.hikey;
-						instRegion.lovel = presetRegion.lovel;
-						instRegion.hivel = presetRegion.hivel;
+						inst_region.lokey = preset_region.lokey;
+						inst_region.hikey = preset_region.hikey;
+						inst_region.lovel = preset_region.lovel;
+						inst_region.hivel = preset_region.hivel;
 
-						SF2::inst* inst = &hydra.instItems[whichInst];
-						int firstZone = inst->instBagNdx;
-						int zoneEnd = inst[1].instBagNdx;
-						for (int whichZone = firstZone; whichZone < zoneEnd; ++whichZone) {
-							SF2::ibag* ibag = &hydra.ibagItems[whichZone];
+						SF2::inst* inst = &hydra.inst_items[which_inst];
+						int first_zone = inst->instBagNdx;
+						int zone_end = inst[1].instBagNdx;
+						for (int which_zone = first_zone; which_zone < zone_end; ++which_zone) {
+							SF2::ibag* ibag = &hydra.ibag_items[which_zone];
 
 							// Generators.
-							SFZRegion zoneRegion = instRegion;
-							bool hadSampleID = false;
-							int genEnd = ibag[1].instGenNdx;
-							for (int whichGen = ibag->instGenNdx; whichGen < genEnd; ++whichGen) {
-								SF2::igen* igen = &hydra.igenItems[whichGen];
+							SFZRegion zone_region = inst_region;
+							bool had_sample_id = false;
+							int gen_end = ibag[1].instGenNdx;
+							for (int which_gen = ibag->instGenNdx; which_gen < gen_end; ++which_gen) {
+								SF2::igen* igen = &hydra.igen_items[which_gen];
 								if (igen->genOper == SF2Generator::sampleID) {
-									int whichSample = igen->genAmount.wordAmount;
-									SF2::shdr* shdr = &hydra.shdrItems[whichSample];
-									zoneRegion.addForSF2(&presetRegion);
-									zoneRegion.sf2ToSFZ();
-									zoneRegion.offset += shdr->start;
-									zoneRegion.end += shdr->end;
-									zoneRegion.loop_start += shdr->startLoop;
-									zoneRegion.loop_end += shdr->endLoop;
+									int which_sample = igen->genAmount.wordAmount;
+									SF2::shdr* shdr = &hydra.shdr_items[which_sample];
+									zone_region.add_for_sf2(&preset_region);
+									zone_region.sf2_to_sfz();
+									zone_region.offset += shdr->start;
+									zone_region.end += shdr->end;
+									zone_region.loop_start += shdr->startLoop;
+									zone_region.loop_end += shdr->endLoop;
 									if (shdr->endLoop > 0)
-										zoneRegion.loop_end -= 1;
-									if (zoneRegion.pitch_keycenter == -1)
-										zoneRegion.pitch_keycenter = shdr->originalPitch;
-									zoneRegion.tune += shdr->pitchCorrection;
+										zone_region.loop_end -= 1;
+									if (zone_region.pitch_keycenter == -1)
+										zone_region.pitch_keycenter = shdr->originalPitch;
+									zone_region.tune += shdr->pitchCorrection;
 
 									// Pin initialAttenuation to max +6dB.
-									if (zoneRegion.volume > 6.0) {
-										zoneRegion.volume = 6.0;
-										sound->addUnsupportedOpcode(
-											"extreme gain in initialAttenuation");
+									if (zone_region.volume > 6.0) {
+										zone_region.volume = 6.0;
+										sound->add_unsupported_opcode("extreme gain in initialAttenuation");
 										}
 
-									SFZRegion* newRegion = new SFZRegion();
-									*newRegion = zoneRegion;
-									newRegion->sample = sound->sampleFor(shdr->sampleRate);
-									preset->addRegion(newRegion);
-									hadSampleID = true;
+									SFZRegion* new_region = new SFZRegion();
+									*new_region = zone_region;
+									new_region->sample = sound->sample_for(shdr->sampleRate);
+									preset->add_region(new_region);
+									had_sample_id = true;
 									}
 								else
-									add_generator_to_region(igen->genOper, &igen->genAmount, &zoneRegion);
+									add_generator_to_region(igen->genOper, &igen->genAmount, &zone_region);
 								}
 
 							// Handle instrument's global zone.
-							if (whichZone == firstZone && !hadSampleID)
-								instRegion = zoneRegion;
+							if (which_zone == first_zone && !had_sample_id)
+								inst_region = zone_region;
 
 							// Modulators.
-							int modEnd = ibag[1].instModNdx;
-							int whichMod = ibag->instModNdx;
-							if (whichMod < modEnd)
-								sound->addUnsupportedOpcode("any modulator");
+							int mod_end = ibag[1].instModNdx;
+							int which_mod = ibag->instModNdx;
+							if (which_mod < mod_end)
+								sound->add_unsupported_opcode("any modulator");
 							}
 						}
 					else
-						sound->addError("Instrument out of range.");
+						sound->add_error("Instrument out of range.");
 					}
 
 				// Other generators.
 				else
-					add_generator_to_region(pgen->genOper, &pgen->genAmount, &presetRegion);
+					add_generator_to_region(pgen->genOper, &pgen->genAmount, &preset_region);
 				}
 
 			// Modulators.
-			int modEnd = pbag[1].modNdx;
-			int whichMod = pbag->modNdx;
-			if (whichMod < modEnd)
-				sound->addUnsupportedOpcode("any modulator");
+			int mod_end = pbag[1].modNdx;
+			int which_mod = pbag->modNdx;
+			if (which_mod < mod_end)
+				sound->add_unsupported_opcode("any modulator");
 			}
 		}
 }
@@ -160,77 +156,70 @@ void SF2Reader::read()
 
 SampleBuffer* SF2Reader::read_samples(double* progress_var)
 {
-	static const unsigned long bufferSize = 32768;
+	static const unsigned long buffer_size = 32768;
 
-	if (file == NULL) {
-		sound->addError("Couldn't open file.");
-		return NULL;
+	if (file == nullptr) {
+		sound->add_error("Couldn't open file.");
+		return nullptr;
 		}
 
 	// Find the "sdta" chunk.
-	file->setPosition(0);
-	RIFFChunk riffChunk;
-	riffChunk.ReadFrom(file);
+	file->seekg(0);
+	RIFFChunk riff_chunk;
+	riff_chunk.read_from(file);
 	bool found = false;
 	RIFFChunk chunk;
-	while (file->getPosition() < riffChunk.End()) {
-		chunk.ReadFrom(file);
-		if (FourCCEquals(chunk.id, "sdta")) {
+	while (file->tellg() < riff_chunk.end()) {
+		chunk.read_from(file);
+		if (fourcc_eq(chunk.id, "sdta")) {
 			found = true;
 			break;
 			}
-		chunk.SeekAfter(file);
+		chunk.seek_after(file);
 		}
-	int64 sdtaEnd = chunk.End();
+	int64_t sdta_end = chunk.end();
 	found = false;
-	while (file->getPosition() < sdtaEnd) {
-		chunk.ReadFrom(file);
-		if (FourCCEquals(chunk.id, "smpl")) {
+	while (file->tellg() < sdta_end) {
+		chunk.read_from(file);
+		if (fourcc_eq(chunk.id, "smpl")) {
 			found = true;
 			break;
 			}
-		chunk.SeekAfter(file);
+		chunk.seek_after(file);
 		}
 	if (!found) {
-		sound->addError("SF2 is missing its \"smpl\" chunk.");
-		return NULL;
+		sound->add_error("SF2 is missing its \"smpl\" chunk.");
+		return nullptr;
 		}
 
 	// Allocate the SampleBuffer.
-	unsigned long numSamples = chunk.size / sizeof(short);
-	SampleBuffer* sampleBuffer = new SampleBuffer(1, numSamples);
+	unsigned long num_samples = chunk.size / sizeof(short);
+	SampleBuffer* sample_buffer =
+		new SampleBuffer(1, num_samples, 16, SampleBuffer::Little, SampleBuffer::Interleaved);
 
 	// Read and convert.
-	short* buffer = new short[bufferSize];
-	unsigned long samplesLeft = numSamples;
-	float* out = sampleBuffer->getWritePointer(0);
-	while (samplesLeft > 0) {
+	short* buffer = new short[buffer_size];
+	unsigned long samples_left = num_samples;
+	uint8_t* out = sample_buffer->channel_start(0);
+	while (samples_left > 0) {
 		// Read the buffer.
-		unsigned long samplesToRead = bufferSize;
-		if (samplesToRead > samplesLeft)
-			samplesToRead = samplesLeft;
-		file->read(buffer, samplesToRead * sizeof(short));
+		unsigned long samples_to_read = buffer_size;
+		if (samples_to_read > samples_left)
+			samples_to_read = samples_left;
+		file->read((char*) out, samples_to_read * sizeof(int16_t));
 
-		// Convert from signed 16-bit to float.
-		unsigned long samplesToConvert = samplesToRead;
-		short* in = buffer;
-		for (; samplesToConvert > 0; --samplesToConvert) {
-			// If we ever need to compile for big-endian platforms, we'll need to
-			// byte-swap here.
-			*out++ = *in++ / 32767.0;
-			}
-
-		samplesLeft -= samplesToRead;
+		samples_left -= samples_to_read;
+		out += samples_to_read * sizeof(int16_t);
 
 		if (progress_var)
-			*progress_var = (float) (numSamples - samplesLeft) / numSamples;
+			*progress_var = (float) (num_samples - samples_left) / num_samples;
 		}
 	delete[] buffer;
 
 	if (progress_var)
 		*progress_var = 1.0;
 
-	return sampleBuffer;
+	return sample_buffer;
 }
 
 
@@ -304,10 +293,10 @@ void SF2Reader::add_generator_to_region(
 			break;
 		case SF2Generator::sampleModes:
 			{
-				SFZRegion::LoopMode loopModes[] = {
+				SFZRegion::LoopMode loop_modes[] = {
 					SFZRegion::no_loop, SFZRegion::loop_continuous,
 					SFZRegion::no_loop, SFZRegion::loop_sustain };
-				region->loop_mode = loopModes[amount->wordAmount & 0x03];
+				region->loop_mode = loop_modes[amount->wordAmount & 0x03];
 			}
 			break;
 		case SF2Generator::scaleTuning:
@@ -362,8 +351,8 @@ void SF2Reader::add_generator_to_region(
 		case SF2Generator::reserved3:
 		case SF2Generator::unused5:
 			{
-				const SF2Generator* generator = GeneratorFor(genOper);
-				sound->addUnsupportedOpcode(generator->name);
+				const SF2Generator* generator = generator_for(genOper);
+				sound->add_unsupported_opcode(generator->name);
 			}
 			break;
 		}

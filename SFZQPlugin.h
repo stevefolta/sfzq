@@ -82,7 +82,7 @@ class SFZQPlugin : public CLAPPlugin {
 		void process_event(const clap_event_header_t* event);
 		void layout();
 		void open_file_chooser();
-		void load_sfx(std::string path);
+		void load_sound(std::string path);
 		void load_samples();
 	};
 

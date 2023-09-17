@@ -14,7 +14,7 @@ class SF2Sound : public SFZSound {
 		~SF2Sound();
 
 		void load_regions();
-		void load_samples(double* progress_var = nullptr);
+		void load_samples(std::function<void(double)> progress_fn = {});
 
 		struct Preset {
 			std::string name;

@@ -3,6 +3,7 @@
 #include "SFZSample.h"
 #include "SampleBuffer.h"
 #include <algorithm>
+#include <iostream>
 
 
 SF2Sound::SF2Sound(std::string path)
@@ -44,18 +45,18 @@ void SF2Sound::load_regions()
 }
 
 
-void SF2Sound::load_samples(double* progress_var)
+void SF2Sound::load_samples(std::function<void(double)> progress_fn)
 {
 	SF2Reader reader(this, path);
-	SampleBuffer* buffer = reader.read_samples(progress_var);
+	SampleBuffer* buffer = reader.read_samples(progress_fn);
 	if (buffer) {
 		// All the SFZSamples will share the buffer.
 		for (auto& kv: samples_by_rate)
 			kv.second->set_buffer(buffer);
 		}
 
-	if (progress_var)
-		*progress_var = 1.0;
+	if (progress_fn)
+		progress_fn(1.0);
 }
 
 
@@ -88,6 +89,9 @@ std::string SF2Sound::subsound_name(int which_subsound)
 
 void SF2Sound::use_subsound(int which_subsound)
 {
+	if (which_subsound >= (int) presets.size())
+		return;
+
 	selected_preset = which_subsound;
 	regions = presets[which_subsound]->regions;
 }

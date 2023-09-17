@@ -4,7 +4,9 @@
 void RIFFChunk::read_from(std::istream* file)
 {
 	file->read(&id[0], sizeof(fourcc));
-	*file >> size;
+	uint8_t bytes[4];
+	file->read((char*) bytes, sizeof(bytes));
+	size = (dword) (bytes[0] | (uint32_t) bytes[1] << 8 | (uint32_t) bytes[2] << 16 | (uint32_t) bytes[3] << 24);
 	start = file->tellg();
 
 	if (fourcc_eq(id, "RIFF")) {

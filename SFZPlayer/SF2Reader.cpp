@@ -5,6 +5,7 @@
 #include "RIFF.h"
 #include "SF2.h"
 #include "SF2Generator.h"
+#include <iostream>
 
 
 SF2Reader::SF2Reader(SF2Sound* sound_in, std::string path)
@@ -154,7 +155,7 @@ void SF2Reader::read()
 }
 
 
-SampleBuffer* SF2Reader::read_samples(double* progress_var)
+SampleBuffer* SF2Reader::read_samples(std::function<void(double)> progress_fn)
 {
 	static const unsigned long buffer_size = 32768;
 
@@ -211,13 +212,13 @@ SampleBuffer* SF2Reader::read_samples(double* progress_var)
 		samples_left -= samples_to_read;
 		out += samples_to_read * sizeof(int16_t);
 
-		if (progress_var)
-			*progress_var = (float) (num_samples - samples_left) / num_samples;
+		if (progress_fn)
+			progress_fn((double) (num_samples - samples_left) / num_samples);
 		}
 	delete[] buffer;
 
-	if (progress_var)
-		*progress_var = 1.0;
+	if (progress_fn)
+		progress_fn(1.0);
 
 	return sample_buffer;
 }

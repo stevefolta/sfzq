@@ -3,7 +3,7 @@
 #include "SF2.h"
 #include <string>
 #include <fstream>
-
+#include <functional>
 
 class SF2Sound;
 class SFZRegion;
@@ -17,7 +17,7 @@ class SF2Reader {
 		~SF2Reader();
 
 		void read();
-		SampleBuffer* read_samples(double* progress_var = NULL);
+		SampleBuffer* read_samples(std::function<void(double)> progress_fn = {});
 
 	protected:
 		SF2Sound* sound;

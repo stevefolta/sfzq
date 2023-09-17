@@ -1,6 +1,7 @@
 #include "SFZQPlugin.h"
 #include "SFZSynth.h"
 #include "SFZSound.h"
+#include "SF2Sound.h"
 #include "Button.h"
 #include "FileChooser.h"
 #include "Label.h"
@@ -359,7 +360,7 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 		return false;
 	auto path = stream.read_string();
 	if (stream.ok && !path.empty())
-		load_sfx(path);
+		load_sound(path);
 	return stream.ok;
 }
 
@@ -432,7 +433,7 @@ void SFZQPlugin::open_file_chooser()
 		delete file_chooser;
 		file_chooser = nullptr;
 		tracking_widget = nullptr;
-		load_sfx(path);
+		load_sound(path);
 		});
 	file_chooser->set_cancel_fn([&]() {
 		delete file_chooser;
@@ -443,12 +444,16 @@ void SFZQPlugin::open_file_chooser()
 }
 
 
-void SFZQPlugin::load_sfx(std::string path)
+void SFZQPlugin::load_sound(std::string path)
 {
 	filename_label->label = path.substr(path.find_last_of('/') + 1);
 	filename_label->color = { 0.0, 0.0, 0.0 };
 
-	loading_sound = new SFZSound(path);
+	auto extension = path.substr(path.find_last_of('.') + 1);
+	if (extension == "sf2" || extension == "SF2")
+		loading_sound = new SF2Sound(path);
+	else
+		loading_sound = new SFZSound(path);
 	loading_sound->load_regions();
 
 	progress_bar = new ProgressBar(&cairo_gui);

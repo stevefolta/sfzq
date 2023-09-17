@@ -43,7 +43,7 @@ static int16_t read_short(std::istream* file)
 #define read_a_char20(name, file) 	\
 	file->read(name, 20);
 #define read_a_genAmountType(name, file) 	\
-	name.shortAmount = read_short(file);
+	file->read((char*) name.bytes, 2);
 
 #define SF2Field(type, name) 	\
 	read_a_##type(name, file)

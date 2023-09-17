@@ -14,10 +14,13 @@ namespace SF2 {
 		byte lo, hi;
 		};
 
-	union genAmountType {
-		rangesType range;
-		short shortAmount;
-		word wordAmount;
+	struct genAmountType {
+		uint8_t bytes[2];
+
+		byte lo() { return bytes[0]; }
+		byte hi() { return bytes[1]; }
+		int16_t short_amount() { return (int16_t) (bytes[0] | (uint16_t) bytes[1] << 8); }
+		word word_amount() { return bytes[0] | (uint16_t) bytes[1] << 8; }
 		};
 
 	struct iver {

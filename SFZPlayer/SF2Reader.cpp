@@ -69,7 +69,7 @@ void SF2Reader::read()
 
 				// Instrument.
 				if (pgen->genOper == SF2Generator::instrument) {
-					word which_inst = pgen->genAmount.wordAmount;
+					word which_inst = pgen->genAmount.word_amount();
 					if (which_inst < hydra.inst_num_items) {
 						SFZRegion inst_region;
 						inst_region.clear_for_sf2();
@@ -95,7 +95,7 @@ void SF2Reader::read()
 							for (int which_gen = ibag->instGenNdx; which_gen < gen_end; ++which_gen) {
 								SF2::igen* igen = &hydra.igen_items[which_gen];
 								if (igen->genOper == SF2Generator::sampleID) {
-									int which_sample = igen->genAmount.wordAmount;
+									int which_sample = igen->genAmount.word_amount();
 									SF2::shdr* shdr = &hydra.shdr_items[which_sample];
 									zone_region.add_for_sf2(&preset_region);
 									zone_region.sf2_to_sfz();
@@ -194,12 +194,12 @@ SampleBuffer* SF2Reader::read_samples(std::function<void(double)> progress_fn)
 		}
 
 	// Allocate the SampleBuffer.
-	unsigned long num_samples = chunk.size / sizeof(short);
+	unsigned long num_samples = chunk.size / sizeof(int16_t);
 	SampleBuffer* sample_buffer =
 		new SampleBuffer(1, num_samples, 16, SampleBuffer::Little, SampleBuffer::Interleaved);
 
 	// Read and convert.
-	short* buffer = new short[buffer_size];
+	int16_t* buffer = new int16_t[buffer_size];
 	unsigned long samples_left = num_samples;
 	uint8_t* out = sample_buffer->channel_start(0);
 	while (samples_left > 0) {
@@ -229,85 +229,85 @@ void SF2Reader::add_generator_to_region(
 {
 	switch (genOper) {
 		case SF2Generator::startAddrsOffset:
-			region->offset += amount->shortAmount;
+			region->offset += amount->short_amount();
 			break;
 		case SF2Generator::endAddrsOffset:
-			region->end += amount->shortAmount;
+			region->end += amount->short_amount();
 			break;
 		case SF2Generator::startloopAddrsOffset:
-			region->loop_start += amount->shortAmount;
+			region->loop_start += amount->short_amount();
 			break;
 		case SF2Generator::endloopAddrsOffset:
-			region->loop_end += amount->shortAmount;
+			region->loop_end += amount->short_amount();
 			break;
 		case SF2Generator::startAddrsCoarseOffset:
-			region->offset += amount->shortAmount * 32768;
+			region->offset += amount->short_amount() * 32768;
 			break;
 		case SF2Generator::endAddrsCoarseOffset:
-			region->end += amount->shortAmount * 32768;
+			region->end += amount->short_amount() * 32768;
 			break;
 		case SF2Generator::pan:
-			region->pan = amount->shortAmount * (2.0 / 10.0);
+			region->pan = amount->short_amount() * (2.0 / 10.0);
 			break;
 		case SF2Generator::delayVolEnv:
-			region->ampeg.delay = amount->shortAmount;
+			region->ampeg.delay = amount->short_amount();
 			break;
 		case SF2Generator::attackVolEnv:
-			region->ampeg.attack = amount->shortAmount;
+			region->ampeg.attack = amount->short_amount();
 			break;
 		case SF2Generator::holdVolEnv:
-			region->ampeg.hold = amount->shortAmount;
+			region->ampeg.hold = amount->short_amount();
 			break;
 		case SF2Generator::decayVolEnv:
-			region->ampeg.decay = amount->shortAmount;
+			region->ampeg.decay = amount->short_amount();
 			break;
 		case SF2Generator::sustainVolEnv:
-			region->ampeg.sustain = amount->shortAmount;
+			region->ampeg.sustain = amount->short_amount();
 			break;
 		case SF2Generator::releaseVolEnv:
-			region->ampeg.release = amount->shortAmount;
+			region->ampeg.release = amount->short_amount();
 			break;
 		case SF2Generator::keyRange:
-			region->lokey = amount->range.lo;
-			region->hikey = amount->range.hi;
+			region->lokey = amount->lo();
+			region->hikey = amount->hi();
 			break;
 		case SF2Generator::velRange:
-			region->lovel = amount->range.lo;
-			region->hivel = amount->range.hi;
+			region->lovel = amount->lo();
+			region->hivel = amount->hi();
 			break;
 		case SF2Generator::startloopAddrsCoarseOffset:
-			region->loop_start += amount->shortAmount * 32768;
+			region->loop_start += amount->short_amount() * 32768;
 			break;
 		case SF2Generator::initialAttenuation:
 			// The spec says "initialAttenuation" is in centibels.  But everyone
-			// seems to treat it as millibels.
-			region->volume += -amount->shortAmount / 100.0;
+			// seems to treat it as millibels (centidecibels).
+			region->volume += -amount->short_amount() / 100.0;
 			break;
 		case SF2Generator::endloopAddrsCoarseOffset:
-			region->loop_end += amount->shortAmount * 32768;
+			region->loop_end += amount->short_amount() * 32768;
 			break;
 		case SF2Generator::coarseTune:
-			region->transpose += amount->shortAmount;
+			region->transpose += amount->short_amount();
 			break;
 		case SF2Generator::fineTune:
-			region->tune += amount->shortAmount;
+			region->tune += amount->short_amount();
 			break;
 		case SF2Generator::sampleModes:
 			{
 				SFZRegion::LoopMode loop_modes[] = {
 					SFZRegion::no_loop, SFZRegion::loop_continuous,
 					SFZRegion::no_loop, SFZRegion::loop_sustain };
-				region->loop_mode = loop_modes[amount->wordAmount & 0x03];
+				region->loop_mode = loop_modes[amount->word_amount() & 0x03];
 			}
 			break;
 		case SF2Generator::scaleTuning:
-			region->pitch_keytrack = amount->shortAmount;
+			region->pitch_keytrack = amount->short_amount();
 			break;
 		case SF2Generator::exclusiveClass:
-			region->group = region->off_by = amount->wordAmount;
+			region->group = region->off_by = amount->word_amount();
 			break;
 		case SF2Generator::overridingRootKey:
-			region->pitch_keycenter = amount->shortAmount;
+			region->pitch_keycenter = amount->short_amount();
 			break;
 		case SF2Generator::endOper:
 			// Ignore.

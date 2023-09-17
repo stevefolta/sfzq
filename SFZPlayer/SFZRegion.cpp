@@ -130,6 +130,8 @@ void SFZRegion::sf2_to_sfz()
 void SFZRegion::dump()
 {
 	printf("%d - %d, vel %d - %d", lokey, hikey, lovel, hivel);
+	if (offset)
+		printf(" (offset %lu)", offset);
 	if (sample)
 		printf(": %s", sample->short_name().c_str());
 	printf("\n");

@@ -4,6 +4,7 @@
 #include "SampleBuffer.h"
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 
 SF2Sound::SF2Sound(std::string path)
@@ -75,15 +76,11 @@ int SF2Sound::num_subsounds()
 std::string SF2Sound::subsound_name(int which_subsound)
 {
 	Preset* preset = presets[which_subsound];
-	std::string result;
-	if (preset->bank != 0) {
-		result += preset->bank;
-		result += "/";
-		}
-	result += preset->preset;
-	result += ": ";
-	result += preset->name;
-	return result;
+	std::ostringstream result;
+	if (preset->bank != 0)
+		result << preset->bank << "/";
+	result << preset->preset << ": " << preset->name;
+	return result.str();
 }
 
 

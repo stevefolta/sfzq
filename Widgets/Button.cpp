@@ -34,7 +34,10 @@ void Button::paint()
 	cairo_text_extents(cairo, "M", &ascent_extents);
 	cairo_font_extents_t font_extents;
 	cairo_font_extents(cairo, &font_extents);
-	cairo_move_to(cairo, rect.x + (rect.width - text_extents.width) / 2, rect.y + (rect.height + ascent_extents.height) / 2);
+	cairo_move_to(
+		cairo,
+		rect.x + (rect.width - text_extents.width) / 2 - text_extents.x_bearing,
+		rect.y + (rect.height + ascent_extents.height) / 2);
 	cairo_set_source_rgb(cairo, 0, 0, 0);
 	cairo_show_text(cairo, label);
 

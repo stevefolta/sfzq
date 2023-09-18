@@ -163,6 +163,11 @@ std::string SFZSynth::voice_info_string()
 	return result.str();
 }
 
+int SFZSynth::selected_subsound()
+{
+	return sound ? sound->selected_subsound() : 0;
+}
+
 
 void SFZSynth::note_ended(int note, int channel, int note_id)
 {

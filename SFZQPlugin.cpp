@@ -186,7 +186,7 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 		}
 	else if (message.id == UseSubsound) {
 		synth->use_subsound(message.num);
-		audio_to_main_queue.send(SubsoundChanged);
+		audio_to_main_queue.send(SubsoundChanged, synth->selected_subsound());
 		if (host)
 			host->request_callback(host);
 		}
@@ -364,6 +364,7 @@ void SFZQPlugin::main_thread_tick()
 					subsound_widget->update();
 					refresh_requested = true;
 					}
+				sound_subsound = message.num;
 				break;
 			case VoicesUsed:
 				newest_voices_used = message.num;
@@ -382,6 +383,7 @@ void SFZQPlugin::main_thread_tick()
 			break;
 		if (message.id == SampleLoadComplete) {
 			sound_path = loading_sound->get_path();
+			sound_subsound = loading_sound->selected_subsound();
 			delete progress_bar;
 			progress_bar = nullptr;
 			delete subsound_widget;
@@ -390,6 +392,7 @@ void SFZQPlugin::main_thread_tick()
 				subsound_widget = new SubsoundWidget(&cairo_gui, loading_sound);
 				subsound_widget->select_subsound_fn = [&](int which_subsound) {
 					main_to_audio_queue.send(UseSubsound, which_subsound);
+					state_extension->host_mark_dirty();
 					};
 				}
 			error_box->text = loading_sound->get_errors_string();
@@ -397,7 +400,10 @@ void SFZQPlugin::main_thread_tick()
 			main_to_audio_queue.send(UseSound, loading_sound);
 			loading_sound = nullptr;
 			refresh_requested = true;
-			state_extension->host_mark_dirty();
+			if (initial_load)
+				initial_load = false;
+			else
+				state_extension->host_mark_dirty();
 			}
 		}
 
@@ -412,6 +418,7 @@ bool SFZQPlugin::save_state(const clap_ostream_t* clap_stream)
 	CLAPOutStream stream(clap_stream);
 	stream.write_uint32(1); 	// Version.
 	stream.write_string(sound_path);
+	stream.write_uint32(sound_subsound);
 	return stream.ok;
 }
 
@@ -422,9 +429,17 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 	if (!stream.ok || version != 1)
 		return false;
 	auto path = stream.read_string();
-	if (stream.ok && !path.empty())
-		load_sound(path);
-	return stream.ok;
+	if (!stream.ok)
+		return false;
+	int subsound = 0;
+	int read_subsound = stream.read_uint32();
+	if (stream.ok)
+		subsound = read_subsound;
+	if (!path.empty()) {
+		initial_load = true;
+		load_sound(path, subsound);
+		}
+	return true;
 }
 
 
@@ -516,7 +531,7 @@ void SFZQPlugin::open_file_chooser()
 }
 
 
-void SFZQPlugin::load_sound(std::string path)
+void SFZQPlugin::load_sound(std::string path, int subsound)
 {
 	filename_label->label = path.substr(path.find_last_of('/') + 1);
 	filename_label->color = { 0.0, 0.0, 0.0 };
@@ -527,6 +542,7 @@ void SFZQPlugin::load_sound(std::string path)
 	else
 		loading_sound = new SFZSound(path);
 	loading_sound->load_regions();
+	loading_sound->use_subsound(subsound);
 
 	progress_bar = new ProgressBar(&cairo_gui);
 	progress_bar->max = 1.0;

@@ -53,7 +53,9 @@ class SFZQPlugin : public CLAPPlugin {
 
 		SFZSynth* synth = nullptr;
 		std::string sound_path;
+		int sound_subsound = 0;
 		SFZSound* loading_sound = nullptr;
+		bool initial_load = false;
 		std::thread load_samples_thread;
 		std::atomic_bool refresh_requested = false;
 
@@ -87,7 +89,7 @@ class SFZQPlugin : public CLAPPlugin {
 		void process_event(const clap_event_header_t* event);
 		void layout();
 		void open_file_chooser();
-		void load_sound(std::string path);
+		void load_sound(std::string path, int subsound = 0);
 		void load_samples();
 	};
 

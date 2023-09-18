@@ -32,6 +32,7 @@ class SFZSynth {
 
 		int num_voices_used();
 		std::string voice_info_string();
+		int selected_subsound();
 
 		bool is_note_stealing_enabled() { return true; }
 

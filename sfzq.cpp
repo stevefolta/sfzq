@@ -35,7 +35,7 @@ DECLARE_CLAP_PLUGIN_ENTRY(factory)
 #ifdef DEBUG_UNLOADING
 extern "C" __attribute__((destructor)) void at_unload()
 {
-	std::cerr << "- Unloading." << std::endl;
+	std::cerr << "- Unloading." << std::endl << std::endl;
 }
 #endif
 

@@ -13,8 +13,8 @@ void Button::paint()
 
 	// Border/background.
 	auto cur_corner_size = corner_size;
-	if (cur_corner_size >= rect.width / 2)
-		cur_corner_size = rect.width * 0.25;
+	if (cur_corner_size >= rect.height / 2)
+		cur_corner_size = rect.height * 0.25;
 	rounded_rect(rect, cur_corner_size);
 	if (pressed && is_mouse_over)
 		cairo_set_source_rgb(cairo, 0.8, 0.8, 0.8);

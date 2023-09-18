@@ -28,6 +28,8 @@ class SubsoundWidget : public Widget {
 		Label* name_label;
 		Button* minus_button;
 		Button* plus_button;
+		Button* minus_more_button = nullptr;
+		Button* plus_more_button = nullptr;
 		Widget* tracking_widget = nullptr;
 	};
 

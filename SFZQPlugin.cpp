@@ -97,7 +97,12 @@ static const std::vector<clap_audio_port_info_t> audio_out_ports = {
 	{
 		.id = 0,
 		.name = "out",
-		.flags = CLAP_AUDIO_PORT_IS_MAIN,
+		.flags =
+			CLAP_AUDIO_PORT_IS_MAIN
+#ifndef SUPPORT_32_BIT_ONLY
+			| CLAP_AUDIO_PORT_SUPPORTS_64BITS
+#endif
+			,
 		.channel_count = 2,
 		.port_type = CLAP_PORT_STEREO,
 		.in_place_pair = CLAP_INVALID_ID,

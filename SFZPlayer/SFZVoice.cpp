@@ -6,6 +6,7 @@
 #include "SampleBuffer.h"
 #include "CLAPOutBuffer.h"
 #include "Decibels.h"
+#include "SFZFloat.h"
 #include <sstream>
 #include <math.h>
 #include <iostream>
@@ -162,10 +163,24 @@ void SFZVoice::render(
 	auto in_r = in_buffer->num_channels > 1 ? in_buffer->channel_start(1) : nullptr;
 	auto in_read = in_buffer->read_sample;
 
-	float* out_l = output_buffer->samples_for_channel(0) + start_sample;
-	float* out_r =
+#ifndef SUPPORT_32_BIT_ONLY
+	double* out_l_64 = output_buffer->samples_for_channel_64(0);
+	if (out_l_64)
+		out_l_64 += start_sample;
+	double* out_r_64 =
 		output_buffer->num_channels() > 1 ?
-		output_buffer->samples_for_channel(1) + start_sample : nullptr;
+		output_buffer->samples_for_channel_64(1) : nullptr;
+	if (out_r_64)
+		out_r_64 += start_sample;
+#endif
+	float* out_l_32 = output_buffer->samples_for_channel_32(0);
+	if (out_l_32)
+		out_l_32 += start_sample;
+	float* out_r_32 =
+		output_buffer->num_channels() > 1 ?
+		output_buffer->samples_for_channel_32(1) : nullptr;
+	if (out_r_32)
+		out_r_32 += start_sample;
 
 	// Cache some values, to give them at least some chance of ending up in
 	// registers.
@@ -180,33 +195,42 @@ void SFZVoice::render(
 
 	while (--num_samples >= 0) {
 		int pos = (int) source_sample_position;
-		float alpha = (float) (source_sample_position - pos);
-		float inv_alpha = 1.0f - alpha;
+		sfz_float alpha = (float) (source_sample_position - pos);
+		sfz_float inv_alpha = 1.0f - alpha;
 		int next_pos = pos + 1;
 		if (loop_start < loop_end && next_pos > loop_end)
 			next_pos = loop_start;
 
 		// Simple linear interpolation.
 		auto stride = in_buffer->stride;
-		float l =
+		sfz_float l =
 			in_read(in_l + pos * stride) * inv_alpha + in_read(in_l + next_pos * stride) * alpha;
-		float r =
+		sfz_float r =
 			in_r ?
 			(in_read(in_r + pos * stride) * inv_alpha + in_read(in_r + next_pos * stride) * alpha) :
 			l;
 
-		float gain_left = note_gain_left * ampeg_gain;
-		float gain_right = note_gain_right * ampeg_gain;
+		sfz_float gain_left = note_gain_left * ampeg_gain;
+		sfz_float gain_right = note_gain_right * ampeg_gain;
 		l *= gain_left;
 		r *= gain_right;
 		// Shouldn't we dither here?
 
-		if (out_r) {
-			*out_l++ += l;
-			*out_r++ += r;
+#ifndef SUPPORT_32_BIT_ONLY
+		if (out_r_64) {
+			*out_l_64++ += l;
+			*out_r_64++ += r;
+			}
+		else if (out_l_64)
+			*out_l_64++ += (l + r) * 0.5d;
+		else
+#endif
+		if (out_r_32) {
+			*out_l_32++ += l;
+			*out_r_32++ += r;
 			}
 		else
-			*out_l++ += (l + r) * 0.5f;
+			*out_l_32++ += (l + r) * 0.5f;
 
 		// Next sample.
 		source_sample_position += pitch_ratio;

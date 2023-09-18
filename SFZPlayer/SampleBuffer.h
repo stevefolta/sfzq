@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SFZFloat.h"
 #include <vector>
 #include <stdint.h>
 #include <stddef.h>
@@ -13,7 +14,7 @@ class SampleBuffer {
 		enum Layout {
 			Planar, Interleaved,
 			};
-		typedef float (*ReadFn)(const uint8_t*);
+		typedef sfz_float (*ReadFn)(const uint8_t*);
 
 		SampleBuffer(int num_channels, int num_samples, int bits_per_sample, Endianness endianness, Layout layout);
 		bool valid() {
@@ -33,7 +34,7 @@ class SampleBuffer {
 			 auto in_read = in_buffer->read_sample;
 			 auto in_p = in_buffer->channel_start(which_channel) + start_sample * in_buffer->stride;
 			 while (...) {
-			 	float sample = in_read(in_p);
+			 	sfz_float sample = in_read(in_p);
 				in_p += in_buffer->stride;
 				 }
 		*/

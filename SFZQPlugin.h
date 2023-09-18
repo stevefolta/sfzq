@@ -62,8 +62,11 @@ class SFZQPlugin : public CLAPPlugin {
 		FileChooser* file_chooser = nullptr;
 		SubsoundWidget* subsound_widget = nullptr;
 		TextBox* error_box = nullptr;
+		Label* voices_used_label = nullptr;
 		Widget* tracking_widget = nullptr;
 		uint32_t gui_width = default_gui_width, gui_height = default_gui_height;
+
+		int frames_until_num_voices_update = 0; 	// Audio thread only.
 
 		MessageQueue main_to_audio_queue;
 		MessageQueue audio_to_main_queue;

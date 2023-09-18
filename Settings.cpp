@@ -49,6 +49,8 @@ void SettingsParser::parse_setting(std::string_view setting_name, std::string_vi
 		if (value >= 0)
 			settings.num_voices = value;
 		}
+	else if (setting_name == "show-voices-used")
+		settings.show_voices_used = parse_bool(value_token);
 	else
 		errors << "Unknown setting: " << setting_name << "." << std::endl;
 }

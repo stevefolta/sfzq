@@ -6,6 +6,7 @@
 struct Settings {
 	std::string samples_directory = "";
 	uint32_t num_voices = 32;
+	bool show_voices_used = false;
 
 	std::string errors;
 

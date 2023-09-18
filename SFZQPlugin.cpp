@@ -25,9 +25,11 @@
 static const double filename_label_height = 24.0;
 static const double progress_bar_height = 20.0;
 static const double subsound_widget_height = 16.0;
+static const double voices_used_label_height = 12.0;
 static const double margin = 10.0;
 static const double spacing = 6.0;
 static const double file_chooser_alpha = 0.9;
+static const int num_voices_update_frames = 22050;
 
 
 SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host)
@@ -51,6 +53,10 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	filename_label->color = { 0.5, 0.5, 0.5 };
 	error_box = new TextBox(&cairo_gui);
 	error_box->text = settings.errors;
+	if (settings.show_voices_used) {
+		voices_used_label = new Label(&cairo_gui, "Voices used:");
+		voices_used_label->font_weight = CAIRO_FONT_WEIGHT_NORMAL;
+		}
 	layout();
 }
 
@@ -60,6 +66,7 @@ SFZQPlugin::~SFZQPlugin()
 	delete progress_bar;
 	delete subsound_widget;
 	delete error_box;
+	delete voices_used_label;
 	delete file_chooser;
 
 	if (load_samples_thread.joinable())
@@ -211,6 +218,17 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 		cur_frame = next_event_frame;
 		}
 
+	// Send info back to the main thread.
+	if (settings.show_voices_used) {
+		frames_until_num_voices_update -= num_frames;
+		if (frames_until_num_voices_update <= 0) {
+			audio_to_main_queue.send(VoicesUsed, synth->num_voices_used());
+			if (host)
+				host->request_callback(host);
+			frames_until_num_voices_update = num_voices_update_frames;
+			}
+		}
+
 	synth->set_note_off_fn({});
 	return CLAP_PROCESS_CONTINUE;
 }
@@ -266,6 +284,8 @@ void SFZQPlugin::paint_gui()
 		progress_bar->paint();
 	if (subsound_widget)
 		subsound_widget->paint();
+	if (voices_used_label)
+		voices_used_label->paint();
 	error_box->paint();
 
 	if (file_chooser) {
@@ -329,8 +349,12 @@ void SFZQPlugin::mouse_moved(int32_t x, int32_t y)
 
 void SFZQPlugin::main_thread_tick()
 {
-	auto message = audio_to_main_queue.pop_front();
-	if (message.id > 0) {
+	// Get messages from audio thread.
+	int newest_voices_used = -1;
+	while (true) {
+		auto message = audio_to_main_queue.pop_front();
+		if (message.id < 0)
+			break;
 		switch (message.id) {
 			case DoneWithSound:
 				delete (SFZSound*) message.param;
@@ -341,11 +365,19 @@ void SFZQPlugin::main_thread_tick()
 					refresh_requested = true;
 					}
 				break;
+			case VoicesUsed:
+				newest_voices_used = message.num;
+				break;
 			}
 		}
+	if (newest_voices_used >= 0 && voices_used_label) {
+		voices_used_label->label = "Voices used: " + std::to_string(newest_voices_used);
+		refresh_requested = true;
+		}
 
+	// Get messages from load thread.
 	while (true) {
-		message = load_to_main_queue.pop_front();
+		auto message = load_to_main_queue.pop_front();
 		if (message.id < 0)
 			break;
 		if (message.id == SampleLoadComplete) {
@@ -440,6 +472,10 @@ void SFZQPlugin::layout()
 		subsound_widget->rect = { margin, top, contents_width, subsound_widget_height };
 		subsound_widget->layout();
 		top += subsound_widget_height + spacing;
+		}
+	if (voices_used_label) {
+		voices_used_label->rect = { margin, top, contents_width, voices_used_label_height };
+		top += voices_used_label_height + spacing;
 		}
 	error_box->rect = { margin, top, contents_width, gui_height - margin - top };
 	if (file_chooser) {

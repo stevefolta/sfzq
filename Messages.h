@@ -11,6 +11,7 @@ enum {
 	DoneWithSound, 	// param: SFZSound*
 		// Passes ownership of SFZSound back to the main thread, so it can be deleted.
 	SubsoundChanged,
+	VoicesUsed, 	// num: number of voices used.
 
 	// Sample load thread -> main thread.
 	SampleLoadComplete,

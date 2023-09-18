@@ -19,6 +19,7 @@ class Button : public Widget {
 			font = font_in;
 			font_weight = weight_in;
 			}
+		bool enabled = true;
 
 		void paint();
 		void mouse_pressed(int x, int y);
@@ -27,7 +28,7 @@ class Button : public Widget {
 
 	protected:
 		const char* label;
-		bool pressed = true, is_mouse_over = false;
+		bool pressed = false, is_mouse_over = false;
 		const char* font = nullptr;
 		cairo_font_weight_t font_weight = CAIRO_FONT_WEIGHT_BOLD;
 	};

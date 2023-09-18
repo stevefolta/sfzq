@@ -38,7 +38,7 @@ void Button::paint()
 		cairo,
 		rect.x + (rect.width - text_extents.width) / 2 - text_extents.x_bearing,
 		rect.y + (rect.height + ascent_extents.height) / 2);
-	cairo_set_source_rgb(cairo, 0, 0, 0);
+	cairo_set_source_rgba(cairo, 0, 0, 0, (enabled ? 1.0 : 0.4));
 	cairo_show_text(cairo, label);
 
 	cairo_restore(cairo);
@@ -47,6 +47,8 @@ void Button::paint()
 
 void Button::mouse_pressed(int x, int y)
 {
+	if (!enabled)
+		return;
 	pressed = true;
 	is_mouse_over = true;
 }
@@ -54,7 +56,7 @@ void Button::mouse_pressed(int x, int y)
 bool Button::mouse_released(int x, int y)
 {
 	pressed = false;
-	return contains(x, y);
+	return enabled && contains(x, y);
 }
 
 void Button::mouse_moved(int x, int y)

@@ -44,6 +44,7 @@ void SFZReader::read(const char* text, unsigned int length)
 	const char* end = text + length;
 	char c;
 
+	SFZRegion cur_global;
 	SFZRegion cur_group;
 	SFZRegion cur_region;
 	SFZRegion* building_region = nullptr;
@@ -111,8 +112,15 @@ void SFZReader::read(const char* text, unsigned int length)
 				else if (tag == "group") {
 					if (building_region && building_region == &cur_region)
 						finish_region(&cur_region);
-					cur_group.clear();
+					cur_group = cur_global;
 					building_region = &cur_group;
+					in_control = false;
+					}
+				else if (tag == "global") {
+					if (building_region && building_region == &cur_region)
+						finish_region(&cur_region);
+					cur_global.clear();
+					building_region = &cur_global;
 					in_control = false;
 					}
 				else if (tag == "control") {

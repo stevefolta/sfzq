@@ -281,6 +281,10 @@ void SFZReader::read(const char* text, unsigned int length)
 						building_region->ampeg_veltrack.sustain = std::stof(value);
 					else if (opcode == "ampeg_vel2release")
 						building_region->ampeg_veltrack.release = std::stof(value);
+					else if (opcode == "lorand")
+						building_region->lorand = std::stof(value);
+					else if (opcode == "hirand")
+						building_region->hirand = std::stof(value);
 					else if (opcode == "default_path")
 						error("\"default_path\" outside of <control> tag");
 					else

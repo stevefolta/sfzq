@@ -41,8 +41,10 @@ void SFZVoice::start_note(
 
 	int velocity = (int) (float_velocity * 127.0);
 	cur_velocity = velocity;
-	if (region == nullptr)
-		region = sound->get_region_for(note_in, velocity);
+	if (region == nullptr) {
+		// This is not really used.
+		region = sound->get_region_for(note_in, velocity, 0.0);
+		}
 	if (region == nullptr || region->sample == nullptr || region->sample->buffer == nullptr) {
 		kill_note();
 		return;

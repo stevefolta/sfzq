@@ -33,18 +33,20 @@ class SFZRegion {
 		void sf2_to_sfz();
 		void dump();
 
-		bool matches(unsigned char note, unsigned char velocity, Trigger trigger) {
+		bool matches(unsigned char note, unsigned char velocity, Trigger trigger, float rand_val) {
 			return
 				note >= lokey && note <= hikey &&
 				velocity >= lovel && velocity <= hivel &&
 				(trigger == this->trigger ||
-				 (this->trigger == attack && (trigger == first || trigger == legato)));
+				 (this->trigger == attack && (trigger == first || trigger == legato))) &&
+				rand_val >= lorand && rand_val < hirand;
 			}
 
 		SFZSample* sample;
 		unsigned char lokey, hikey;
 		unsigned char lovel, hivel;
 		Trigger trigger;
+		float lorand = 0.0, hirand = 1.0;
 		unsigned long group, off_by;
 		OffMode off_mode;
 

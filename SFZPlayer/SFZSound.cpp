@@ -93,12 +93,12 @@ void SFZSound::load_samples(std::function<void(double)> progress_fn)
 
 
 SFZRegion* SFZSound::get_region_for(
-	int note, int velocity, SFZRegion::Trigger trigger)
+	int note, int velocity, float rand_val, SFZRegion::Trigger trigger)
 {
 	int num_regions = regions.size();
 	for (int i = 0; i < num_regions; ++i) {
 		SFZRegion* region = regions[i];
-		if (region->matches(note, velocity, trigger))
+		if (region->matches(note, velocity, trigger, rand_val))
 			return region;
 		}
 

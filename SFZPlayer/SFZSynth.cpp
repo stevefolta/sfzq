@@ -2,6 +2,7 @@
 #include "SFZVoice.h"
 #include "SFZSound.h"
 #include <sstream>
+#include <stdlib.h>
 
 
 SFZSynth::SFZSynth(int num_voices)
@@ -39,11 +40,12 @@ void SFZSynth::reset()
 void SFZSynth::note_on(int note, double velocity, int channel, int note_id)
 {
 	int midi_velocity = (int) (velocity * 127);
+	float rand_val = random() / (float) (INT32_MAX - 1);
 
 	// First, stop any currently-playing sounds in the group.
 	int group = 0;
 	if (sound) {
-		SFZRegion* region = sound->get_region_for(note, midi_velocity);
+		SFZRegion* region = sound->get_region_for(note, midi_velocity, rand_val);
 		if (region)
 			group = region->group;
 		}
@@ -75,7 +77,7 @@ void SFZSynth::note_on(int note, double velocity, int channel, int note_id)
 		int num_regions = sound->num_regions();
 		for (int i = 0; i < num_regions; ++i) {
 			SFZRegion* region = sound->region_at(i);
-			if (region->matches(note, midi_velocity, trigger)) {
+			if (region->matches(note, midi_velocity, trigger, rand_val)) {
 				SFZVoice* voice = find_free_voice(note, is_note_stealing_enabled());
 				if (voice) {
 					voice->set_region(region);
@@ -99,9 +101,10 @@ void SFZSynth::note_off(int note, double velocity, int channel, int note_id, boo
 
 	// Start release region.
 	if (sound) {
+		float rand_val = random() / (float) (INT32_MAX - 1);
 		SFZRegion* region =
 			sound->get_region_for(
-				note, note_velocities[note], SFZRegion::release);
+				note, note_velocities[note], rand_val, SFZRegion::release);
 		if (region) {
 			SFZVoice* voice = find_free_voice(note, false);
 			if (voice) {

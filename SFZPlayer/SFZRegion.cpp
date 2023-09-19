@@ -37,6 +37,8 @@ void SFZRegion::clear()
 	memset(this, 0, sizeof(*this));
 	hikey = 127;
 	hivel = 127;
+	lorand = 0.0;
+	hirand = 1.0;
 	pitch_keycenter = 60; 	// C4
 	pitch_keytrack = 100;
 	bend_up = 200;

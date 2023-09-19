@@ -23,7 +23,7 @@ class SFZSound {
 		virtual void load_samples(std::function<void(double)> progress_fn = {});
 
 		SFZRegion* get_region_for(
-			int note, int velocity, SFZRegion::Trigger trigger = SFZRegion::attack);
+			int note, int velocity, float rand_val, SFZRegion::Trigger trigger = SFZRegion::attack);
 		int num_regions() { return regions.size(); }
 		SFZRegion* region_at(int index) { return regions[index]; }
 

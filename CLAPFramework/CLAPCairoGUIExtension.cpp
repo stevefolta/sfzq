@@ -2,6 +2,7 @@
 #include "CLAPPlugin.h"
 #include "CLAPPosixFDExtension.h"
 #include <X11/Xutil.h>
+#include <X11/cursorfont.h>
 #include <iostream>
 
 
@@ -126,6 +127,10 @@ bool CLAPCairoGUIExtension::create_gui()
 			ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask |
 			StructureNotifyMask | EnterWindowMask | LeaveWindowMask | ButtonMotionMask |
 			KeymapStateMask | FocusChangeMask | PropertyChangeMask);
+	// Use the "default" cursor.  "Default" is ill-defined here, XC_left_ptr
+	// matches what most programs show.
+	Cursor cursor = XCreateFontCursor(display, XC_left_ptr);
+	XDefineCursor(display, window, cursor);
 
 	// Create Cairo stuff.
 	surface = cairo_xlib_surface_create(display, window, DefaultVisual(display, 0), width, height);

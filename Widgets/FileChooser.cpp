@@ -38,6 +38,7 @@ void FileChooser::set_path(std::string new_path)
 {
 	path = new_path;
 	file_list->set_dir(new_path);
+	up_button->enabled = (path != "/");
 }
 
 void FileChooser::set_file_filter(std::function<bool(const char*)> new_file_filter)
@@ -52,7 +53,9 @@ void FileChooser::set_font(const char* font, double size, cairo_font_weight_t we
 
 void FileChooser::set_path_font(const char* font, double size, cairo_font_weight_t weight)
 {
-	/***/
+	path_font = font;
+	path_font_size = size;
+	path_font_weight = weight;
 }
 
 void FileChooser::set_button_font(const char* font, cairo_font_weight_t weight)
@@ -223,10 +226,8 @@ void FileChooser::enter_selected_entry()
 	if (path != "/")
 		entry_path = path + entry_path;
 
-	if (file_list->selection_is_dir()) {
-		path = entry_path;
-		file_list->set_dir(path);
-		}
+	if (file_list->selection_is_dir())
+		set_path(entry_path);
 
 	else {
 		if (ok_fn)
@@ -238,10 +239,10 @@ void FileChooser::enter_selected_entry()
 void FileChooser::go_up()
 {
 	auto last_slash = path.find_last_of('/');
-	path = path.substr(0, last_slash);
-	if (path.empty())
-		path = "/";
-	file_list->set_dir(path);
+	auto new_path = path.substr(0, last_slash);
+	if (new_path.empty())
+		new_path = "/";
+	set_path(new_path);
 }
 
 

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <string_view>
+#include <map>
 
 
 SFZReader::SFZReader(SFZSound* sound_in)
@@ -37,6 +38,89 @@ void SFZReader::read(std::string path)
 	read(contents.data(), contents.size());
 }
 
+
+typedef void (*OpcodeSetter)(SFZRegion* region, const std::string& value);
+static const std::map<std::string_view, OpcodeSetter> opcode_setters = {
+	{ "lokey", [](SFZRegion* region, const std::string& value) { region->lokey = SFZReader::key_value(value); } },
+	{ "hikey", [](SFZRegion* region, const std::string& value) { region->hikey = SFZReader::key_value(value); } },
+	{ "key", [](SFZRegion* region, const std::string& value) {
+			region->hikey =
+			region->lokey =
+			region->pitch_keycenter =
+				SFZReader::key_value(value);
+		} },
+	{ "lovel", [](SFZRegion* region, const std::string& value) {
+		region->lovel = std::stol(value); } },
+	{ "hivel", [](SFZRegion* region, const std::string& value) {
+		region->hivel = std::stol(value); } },
+	{ "trigger", [](SFZRegion* region, const std::string& value) {
+		region->trigger = (SFZRegion::Trigger) SFZReader::trigger_value(value); } },
+	{ "group", [](SFZRegion* region, const std::string& value) {
+		region->group = (unsigned long) std::stol(value); } },
+	{ "off_by", [](SFZRegion* region, const std::string& value) {
+		region->off_by = (unsigned long) std::stol(value); } },
+	{ "offset", [](SFZRegion* region, const std::string& value) {
+		region->offset = (unsigned long) std::stol(value); } },
+	{ "end", [](SFZRegion* region, const std::string& value) {
+		int64_t end = (unsigned long long) std::stoll(value);
+		if (end < 0)
+			region->negative_end = true;
+		else
+			region->end = end;
+		} },
+	{ "loop_start", [](SFZRegion* region, const std::string& value) {
+		region->loop_start = (unsigned long) std::stol(value); } },
+	{ "loop_end", [](SFZRegion* region, const std::string& value) {
+		region->loop_end = (unsigned long) std::stol(value); } },
+	{ "transpose", [](SFZRegion* region, const std::string& value) {
+		region->transpose = std::stol(value); } },
+	{ "tune", [](SFZRegion* region, const std::string& value) {
+		region->tune = std::stol(value); } },
+	{ "pitch_keycenter", [](SFZRegion* region, const std::string& value) {
+		region->pitch_keycenter = SFZReader::key_value(value); } },
+	{ "pitch_keytrack", [](SFZRegion* region, const std::string& value) {
+		region->pitch_keytrack = std::stol(value); } },
+	{ "bend_up", [](SFZRegion* region, const std::string& value) {
+		region->bend_up = std::stol(value); } },
+	{ "bend_down", [](SFZRegion* region, const std::string& value) {
+		region->bend_down = std::stol(value); } },
+	{ "volume", [](SFZRegion* region, const std::string& value) {
+		region->volume = std::stof(value); } },
+	{ "pan", [](SFZRegion* region, const std::string& value) {
+		region->pan = std::stof(value); } },
+	{ "amp_veltrack", [](SFZRegion* region, const std::string& value) {
+		region->amp_veltrack = std::stof(value); } },
+	{ "ampeg_delay", [](SFZRegion* region, const std::string& value) {
+		region->ampeg.delay = std::stof(value); } },
+	{ "ampeg_start", [](SFZRegion* region, const std::string& value) {
+		region->ampeg.start = std::stof(value); } },
+	{ "ampeg_attack", [](SFZRegion* region, const std::string& value) {
+		region->ampeg.attack = std::stof(value); } },
+	{ "ampeg_hold", [](SFZRegion* region, const std::string& value) {
+		region->ampeg.hold = std::stof(value); } },
+	{ "ampeg_decay", [](SFZRegion* region, const std::string& value) {
+		region->ampeg.decay = std::stof(value); } },
+	{ "ampeg_sustain", [](SFZRegion* region, const std::string& value) {
+		region->ampeg.sustain = std::stof(value); } },
+	{ "ampeg_release", [](SFZRegion* region, const std::string& value) {
+		region->ampeg.release = std::stof(value); } },
+	{ "ampeg_vel2delay", [](SFZRegion* region, const std::string& value) {
+		region->ampeg_veltrack.delay = std::stof(value); } },
+	{ "ampeg_vel2attack", [](SFZRegion* region, const std::string& value) {
+		region->ampeg_veltrack.attack = std::stof(value); } },
+	{ "ampeg_vel2hold", [](SFZRegion* region, const std::string& value) {
+		region->ampeg_veltrack.hold = std::stof(value); } },
+	{ "ampeg_vel2decay", [](SFZRegion* region, const std::string& value) {
+		region->ampeg_veltrack.decay = std::stof(value); } },
+	{ "ampeg_vel2sustain", [](SFZRegion* region, const std::string& value) {
+		region->ampeg_veltrack.sustain = std::stof(value); } },
+	{ "ampeg_vel2release", [](SFZRegion* region, const std::string& value) {
+		region->ampeg_veltrack.release = std::stof(value); } },
+	{ "lorand", [](SFZRegion* region, const std::string& value) {
+		region->lorand = std::stof(value); } },
+	{ "hirand", [](SFZRegion* region, const std::string& value) {
+		region->hirand = std::stof(value); } },
+	};
 
 void SFZReader::read(const char* text, unsigned int length)
 {
@@ -197,37 +281,11 @@ void SFZReader::read(const char* text, unsigned int length)
 						p++;
 						}
 					std::string value(value_start, p - value_start);
+					auto setter_it = opcode_setters.find(opcode);
 					if (building_region == nullptr)
 						error("Setting a parameter outside a region or group");
-					else if (opcode == "lokey")
-						building_region->lokey = key_value(value);
-					else if (opcode == "hikey")
-						building_region->hikey = key_value(value);
-					else if (opcode == "key") {
-						building_region->hikey =
-						building_region->lokey =
-						building_region->pitch_keycenter =
-							key_value(value);
-						}
-					else if (opcode == "lovel")
-						building_region->lovel = std::stol(value);
-					else if (opcode == "hivel")
-						building_region->hivel = std::stol(value);
-					else if (opcode == "trigger")
-						building_region->trigger = (SFZRegion::Trigger) trigger_value(value);
-					else if (opcode == "group")
-						building_region->group = (unsigned long) std::stol(value);
-					else if (opcode == "off_by")
-						building_region->off_by = (unsigned long) std::stol(value);
-					else if (opcode == "offset")
-						building_region->offset = (unsigned long) std::stol(value);
-					else if (opcode == "end") {
-						int64_t end = (unsigned long long) std::stoll(value);
-						if (end < 0)
-							building_region->negative_end = true;
-						else
-							building_region->end = end;
-						}
+					else if (setter_it != opcode_setters.end())
+						setter_it->second(building_region, value);
 					else if (opcode == "loop_mode") {
 						bool models_supported =
 							value == "no_loop" ||
@@ -241,58 +299,6 @@ void SFZReader::read(const char* text, unsigned int length)
 							sound->add_unsupported_opcode(faux_opcode);
 							}
 						}
-					else if (opcode == "loop_start")
-						building_region->loop_start = (unsigned long) std::stol(value);
-					else if (opcode == "loop_end")
-						building_region->loop_end = (unsigned long) std::stol(value);
-					else if (opcode == "transpose")
-						building_region->transpose = std::stol(value);
-					else if (opcode == "tune")
-						building_region->tune = std::stol(value);
-					else if (opcode == "pitch_keycenter")
-						building_region->pitch_keycenter = key_value(value);
-					else if (opcode == "pitch_keytrack")
-						building_region->pitch_keytrack = std::stol(value);
-					else if (opcode == "bend_up")
-						building_region->bend_up = std::stol(value);
-					else if (opcode == "bend_down")
-						building_region->bend_down = std::stol(value);
-					else if (opcode == "volume")
-						building_region->volume = std::stof(value);
-					else if (opcode == "pan")
-						building_region->pan = std::stof(value);
-					else if (opcode == "amp_veltrack")
-						building_region->amp_veltrack = std::stof(value);
-					else if (opcode == "ampeg_delay")
-						building_region->ampeg.delay = std::stof(value);
-					else if (opcode == "ampeg_start")
-						building_region->ampeg.start = std::stof(value);
-					else if (opcode == "ampeg_attack")
-						building_region->ampeg.attack = std::stof(value);
-					else if (opcode == "ampeg_hold")
-						building_region->ampeg.hold = std::stof(value);
-					else if (opcode == "ampeg_decay")
-						building_region->ampeg.decay = std::stof(value);
-					else if (opcode == "ampeg_sustain")
-						building_region->ampeg.sustain = std::stof(value);
-					else if (opcode == "ampeg_release")
-						building_region->ampeg.release = std::stof(value);
-					else if (opcode == "ampeg_vel2delay")
-						building_region->ampeg_veltrack.delay = std::stof(value);
-					else if (opcode == "ampeg_vel2attack")
-						building_region->ampeg_veltrack.attack = std::stof(value);
-					else if (opcode == "ampeg_vel2hold")
-						building_region->ampeg_veltrack.hold = std::stof(value);
-					else if (opcode == "ampeg_vel2decay")
-						building_region->ampeg_veltrack.decay = std::stof(value);
-					else if (opcode == "ampeg_vel2sustain")
-						building_region->ampeg_veltrack.sustain = std::stof(value);
-					else if (opcode == "ampeg_vel2release")
-						building_region->ampeg_veltrack.release = std::stof(value);
-					else if (opcode == "lorand")
-						building_region->lorand = std::stof(value);
-					else if (opcode == "hirand")
-						building_region->hirand = std::stof(value);
 					else if (opcode == "default_path")
 						error("\"default_path\" outside of <control> tag");
 					else

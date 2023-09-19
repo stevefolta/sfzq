@@ -39,6 +39,10 @@ void SFZReader::read(std::string path)
 }
 
 
+// Most opcodes simply set a field in a region.  We use a map to handle these,
+// so the opcode can be looked up more efficiently.  Any opcode that does more
+// than that -- like setting an error -- will be handled in "if" statements
+// below.
 typedef void (*OpcodeSetter)(SFZRegion* region, const std::string& value);
 static const std::map<std::string_view, OpcodeSetter> opcode_setters = {
 	{ "lokey", [](SFZRegion* region, const std::string& value) { region->lokey = SFZReader::key_value(value); } },

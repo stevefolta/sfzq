@@ -386,6 +386,18 @@ void SFZQPlugin::main_thread_tick()
 				if (keyboard)
 					keyboard->set_active_keys_1(message.num);
 				break;
+			case KeyDown:
+				if (keyboard) {
+					keyboard->key_down(message.num);
+					refresh_requested = true;
+					}
+				break;
+			case KeyUp:
+				if (keyboard) {
+					keyboard->key_up(message.num);
+					refresh_requested = true;
+					}
+				break;
 			case VoicesUsed:
 				newest_voices_used = message.num;
 				break;
@@ -470,6 +482,9 @@ void SFZQPlugin::process_event(const clap_event_header_t* event)
 			{
 			auto note_event = (const clap_event_note_t*) event;
 			synth->note_on(note_event->key, note_event->velocity, note_event->channel, note_event->note_id);
+			audio_to_main_queue.send(KeyDown, note_event->key);
+			if (host)
+				host->request_callback(host);
 			}
 			break;
 		case CLAP_EVENT_NOTE_OFF:
@@ -479,6 +494,9 @@ void SFZQPlugin::process_event(const clap_event_header_t* event)
 			synth->note_off(
 				note_event->key, note_event->velocity, note_event->channel, note_event->note_id,
 				(event->type == CLAP_EVENT_NOTE_OFF));
+			audio_to_main_queue.send(KeyUp, note_event->key);
+			if (host)
+				host->request_callback(host);
 			}
 			break;
 		case CLAP_EVENT_NOTE_EXPRESSION:

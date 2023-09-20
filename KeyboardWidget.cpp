@@ -13,6 +13,7 @@ KeyboardWidget::KeyboardWidget(CairoGUI* gui, Rect rect)
 	: Widget(gui, rect)
 {
 	memset(active_keys, 0, sizeof(active_keys));
+	memset(playing_keys, 0, sizeof(active_keys));
 }
 
 
@@ -34,6 +35,18 @@ void KeyboardWidget::set_active_keys_1(uint64_t bitmap)
 		}
 }
 
+void KeyboardWidget::key_down(int key)
+{
+	if (key >= 0 && key < 128)
+		playing_keys[key] = true;
+}
+
+void KeyboardWidget::key_up(int key)
+{
+	if (key >= 0 && key < 128)
+		playing_keys[key] = false;
+}
+
 
 void KeyboardWidget::paint()
 {
@@ -50,7 +63,9 @@ void KeyboardWidget::paint()
 			continue;
 		// Draw.
 		cairo_rectangle(cairo, key_rect.x, key_rect.y, key_rect.width, key_rect.height);
-		if (active_keys[key])
+		if (playing_keys[key])
+			cairo_set_source_rgba(cairo, playing_key_color.red, playing_key_color.green, playing_key_color.blue, playing_key_color.alpha);
+		else if (active_keys[key])
 			cairo_set_source_rgba(cairo, white_key_color.red, white_key_color.green, white_key_color.blue, white_key_color.alpha);
 		else
 			cairo_set_source_rgba(cairo, inactive_key_color.red, inactive_key_color.green, inactive_key_color.blue, inactive_key_color.alpha);
@@ -72,7 +87,9 @@ void KeyboardWidget::paint()
 			continue;
 		// Draw.
 		cairo_rectangle(cairo, key_rect.x, key_rect.y, key_rect.width, key_rect.height);
-		if (active_keys[key])
+		if (playing_keys[key])
+			cairo_set_source_rgba(cairo, playing_key_color.red, playing_key_color.green, playing_key_color.blue, playing_key_color.alpha);
+		else if (active_keys[key])
 			cairo_set_source_rgba(cairo, black_key_color.red, black_key_color.green, black_key_color.blue, black_key_color.alpha);
 		else
 			cairo_set_source_rgba(cairo, inactive_key_color.red, inactive_key_color.green, inactive_key_color.blue, inactive_key_color.alpha);

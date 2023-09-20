@@ -55,7 +55,7 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	filename_label->color = { 0.5, 0.5, 0.5 };
 	error_box = new TextBox(&cairo_gui);
 	error_box->text = settings.errors;
-	keyboard_widget = new KeyboardWidget(&cairo_gui);
+	keyboard = new KeyboardWidget(&cairo_gui);
 	if (settings.show_voices_used) {
 		voices_used_label = new Label(&cairo_gui, "Voices used:");
 		voices_used_label->font_weight = CAIRO_FONT_WEIGHT_NORMAL;
@@ -70,7 +70,7 @@ SFZQPlugin::~SFZQPlugin()
 	delete subsound_widget;
 	delete error_box;
 	delete voices_used_label;
-	delete keyboard_widget;
+	delete keyboard;
 	delete file_chooser;
 
 	if (load_samples_thread.joinable())
@@ -296,7 +296,7 @@ void SFZQPlugin::paint_gui()
 	if (voices_used_label)
 		voices_used_label->paint();
 	error_box->paint();
-	keyboard_widget->paint();
+	keyboard->paint();
 
 	if (file_chooser) {
 		cairo_push_group(cairo);
@@ -406,6 +406,7 @@ void SFZQPlugin::main_thread_tick()
 					};
 				}
 			error_box->text = loading_sound->get_errors_string();
+			keyboard->use_sound(loading_sound);
 			layout();
 			main_to_audio_queue.send(UseSound, loading_sound);
 			loading_sound = nullptr;
@@ -503,7 +504,7 @@ void SFZQPlugin::layout()
 		top += voices_used_label_height + spacing;
 		}
 	double keyboard_top = gui_height - margin - keyboard_height;
-	keyboard_widget->rect = { margin, keyboard_top, contents_width, keyboard_height };
+	keyboard->rect = { margin, keyboard_top, contents_width, keyboard_height };
 	error_box->rect = { margin, top, contents_width, keyboard_top - top };
 	if (file_chooser) {
 		file_chooser->rect = { margin, margin, 0, 0 };

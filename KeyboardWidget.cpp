@@ -1,10 +1,32 @@
 #include "KeyboardWidget.h"
 #include "CairoGUI.h"
+#include "SFZSound.h"
+#include <string.h>
 #include <iostream>
 
 static const double black_key_height_factor = 0.666;
 static const double black_key_width_factor = 0.5;
 static const double key_stroke_width = 0.5;
+
+
+KeyboardWidget::KeyboardWidget(CairoGUI* gui, Rect rect)
+	: Widget(gui, rect)
+{
+	memset(active_keys, 0, sizeof(active_keys));
+}
+
+
+void KeyboardWidget::use_sound(SFZSound* sound)
+{
+	memset(active_keys, 0, sizeof(active_keys));
+	if (sound == nullptr)
+		return;
+
+	for (int key = 0; key < 128; ++key) {
+		if (sound->get_region_for(key, 64, 0.5))
+			active_keys[key] = true;
+		}
+}
 
 
 void KeyboardWidget::paint()
@@ -22,7 +44,10 @@ void KeyboardWidget::paint()
 			continue;
 		// Draw.
 		cairo_rectangle(cairo, key_rect.x, key_rect.y, key_rect.width, key_rect.height);
-		cairo_set_source_rgba(cairo, white_key_color.red, white_key_color.green, white_key_color.blue, white_key_color.alpha);
+		if (active_keys[key])
+			cairo_set_source_rgba(cairo, white_key_color.red, white_key_color.green, white_key_color.blue, white_key_color.alpha);
+		else
+			cairo_set_source_rgba(cairo, inactive_key_color.red, inactive_key_color.green, inactive_key_color.blue, inactive_key_color.alpha);
 		cairo_fill_preserve(cairo);
 		cairo_set_source_rgba(cairo, key_border_color.red, key_border_color.green, key_border_color.blue, key_border_color.alpha);
 		cairo_set_line_width(cairo, key_stroke_width);
@@ -41,7 +66,10 @@ void KeyboardWidget::paint()
 			continue;
 		// Draw.
 		cairo_rectangle(cairo, key_rect.x, key_rect.y, key_rect.width, key_rect.height);
-		cairo_set_source_rgba(cairo, black_key_color.red, black_key_color.green, black_key_color.blue, black_key_color.alpha);
+		if (active_keys[key])
+			cairo_set_source_rgba(cairo, black_key_color.red, black_key_color.green, black_key_color.blue, black_key_color.alpha);
+		else
+			cairo_set_source_rgba(cairo, inactive_key_color.red, inactive_key_color.green, inactive_key_color.blue, inactive_key_color.alpha);
 		cairo_fill_preserve(cairo);
 		cairo_set_source_rgba(cairo, key_border_color.red, key_border_color.green, key_border_color.blue, key_border_color.alpha);
 		cairo_set_line_width(cairo, key_stroke_width);

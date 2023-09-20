@@ -8,6 +8,7 @@
 #include "ProgressBar.h"
 #include "SubsoundWidget.h"
 #include "TextBox.h"
+#include "KeyboardWidget.h"
 #include "CLAPPosixFDExtension.h"
 #include "CLAPCairoGUIExtension.h"
 #include "CLAPAudioPortsExtension.h"
@@ -26,6 +27,7 @@ static const double filename_label_height = 24.0;
 static const double progress_bar_height = 20.0;
 static const double subsound_widget_height = 16.0;
 static const double voices_used_label_height = 12.0;
+static const double keyboard_height = 40.0;
 static const double margin = 10.0;
 static const double spacing = 6.0;
 static const double file_chooser_alpha = 0.9;
@@ -53,6 +55,7 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	filename_label->color = { 0.5, 0.5, 0.5 };
 	error_box = new TextBox(&cairo_gui);
 	error_box->text = settings.errors;
+	keyboard_widget = new KeyboardWidget(&cairo_gui);
 	if (settings.show_voices_used) {
 		voices_used_label = new Label(&cairo_gui, "Voices used:");
 		voices_used_label->font_weight = CAIRO_FONT_WEIGHT_NORMAL;
@@ -67,6 +70,7 @@ SFZQPlugin::~SFZQPlugin()
 	delete subsound_widget;
 	delete error_box;
 	delete voices_used_label;
+	delete keyboard_widget;
 	delete file_chooser;
 
 	if (load_samples_thread.joinable())
@@ -292,6 +296,7 @@ void SFZQPlugin::paint_gui()
 	if (voices_used_label)
 		voices_used_label->paint();
 	error_box->paint();
+	keyboard_widget->paint();
 
 	if (file_chooser) {
 		cairo_push_group(cairo);
@@ -497,7 +502,9 @@ void SFZQPlugin::layout()
 		voices_used_label->rect = { margin, top, contents_width, voices_used_label_height };
 		top += voices_used_label_height + spacing;
 		}
-	error_box->rect = { margin, top, contents_width, gui_height - margin - top };
+	double keyboard_top = gui_height - margin - keyboard_height;
+	keyboard_widget->rect = { margin, keyboard_top, contents_width, keyboard_height };
+	error_box->rect = { margin, top, contents_width, keyboard_top - top };
 	if (file_chooser) {
 		file_chooser->rect = { margin, margin, 0, 0 };
 		file_chooser->resize_to(contents_width, gui_height - 2 * margin);

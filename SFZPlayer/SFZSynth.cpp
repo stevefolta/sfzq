@@ -36,6 +36,11 @@ void SFZSynth::reset()
 		voice->kill_note();
 }
 
+bool SFZSynth::note_is_active(int note)
+{
+	return sound && sound->get_region_for(note, 64, 0.5) != nullptr;
+}
+
 
 void SFZSynth::note_on(int note, double velocity, int channel, int note_id)
 {

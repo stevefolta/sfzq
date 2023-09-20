@@ -16,15 +16,21 @@ KeyboardWidget::KeyboardWidget(CairoGUI* gui, Rect rect)
 }
 
 
-void KeyboardWidget::use_sound(SFZSound* sound)
+void KeyboardWidget::set_active_keys_0(uint64_t bitmap)
 {
-	memset(active_keys, 0, sizeof(active_keys));
-	if (sound == nullptr)
-		return;
+	uint64_t bit = (uint64_t) 1 << 63;
+	for (int note = 0; note < 64; ++note) {
+		active_keys[note] = (bitmap & bit) != 0;
+		bit >>= 1;
+		}
+}
 
-	for (int key = 0; key < 128; ++key) {
-		if (sound->get_region_for(key, 64, 0.5))
-			active_keys[key] = true;
+void KeyboardWidget::set_active_keys_1(uint64_t bitmap)
+{
+	uint64_t bit = (uint64_t) 1 << 63;
+	for (int note = 64; note < 128; ++note) {
+		active_keys[note] = (bitmap & bit) != 0;
+		bit >>= 1;
 		}
 }
 

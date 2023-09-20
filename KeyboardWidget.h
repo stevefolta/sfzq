@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Widget.h"
+#include <stdint.h>
 
 class SFZSound;
 
@@ -8,7 +9,9 @@ class KeyboardWidget : public Widget {
 	public:
 		KeyboardWidget(CairoGUI* gui, Rect rect = {});
 
-		void use_sound(SFZSound* sound);
+		void set_active_keys_0(uint64_t bitmap);
+		void set_active_keys_1(uint64_t bitmap);
+
 		void paint();
 
 		Color white_key_color = { 1.0, 1.0, 1.0 };

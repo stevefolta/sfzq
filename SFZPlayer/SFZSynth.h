@@ -23,6 +23,7 @@ class SFZSynth {
 		void set_sample_rate(double new_sample_rate);
 		void use_subsound(int which_subsound);
 		void reset();
+		bool note_is_active(int note);
 
 		void note_on(int note, double velocity, int channel, int note_id);
 		void note_off(int note, double velocity, int channel, int note_id, bool allow_tail_off);

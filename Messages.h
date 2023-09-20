@@ -12,6 +12,8 @@ enum {
 		// Passes ownership of SFZSound back to the main thread, so it can be deleted.
 	SubsoundChanged,
 	VoicesUsed, 	// num: number of voices used.
+	ActiveKeys0,
+	ActiveKeys1,
 
 	// Sample load thread -> main thread.
 	SampleLoadComplete,

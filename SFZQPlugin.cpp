@@ -189,13 +189,15 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 		auto old_sound = synth->set_sound((SFZSound*) message.param);
 		if (old_sound) {
 			audio_to_main_queue.send(DoneWithSound, old_sound);
-			if (host)
-				host->request_callback(host);
 			}
+		send_active_keys();
+		if (host)
+			host->request_callback(host);
 		}
 	else if (message.id == UseSubsound) {
 		synth->use_subsound(message.num);
 		audio_to_main_queue.send(SubsoundChanged, synth->selected_subsound());
+		send_active_keys();
 		if (host)
 			host->request_callback(host);
 		}
@@ -376,6 +378,14 @@ void SFZQPlugin::main_thread_tick()
 					}
 				sound_subsound = message.num;
 				break;
+			case ActiveKeys0:
+				if (keyboard)
+					keyboard->set_active_keys_0(message.num);
+				break;
+			case ActiveKeys1:
+				if (keyboard)
+					keyboard->set_active_keys_1(message.num);
+				break;
 			case VoicesUsed:
 				newest_voices_used = message.num;
 				break;
@@ -406,7 +416,6 @@ void SFZQPlugin::main_thread_tick()
 					};
 				}
 			error_box->text = loading_sound->get_errors_string();
-			keyboard->use_sound(loading_sound);
 			layout();
 			main_to_audio_queue.send(UseSound, loading_sound);
 			loading_sound = nullptr;
@@ -582,6 +591,28 @@ void SFZQPlugin::load_samples()
 	load_to_main_queue.send(SampleLoadComplete);
 	if (host)
 		host->request_callback(host);
+}
+
+
+void SFZQPlugin::send_active_keys()
+{
+	uint64_t active_keys_0 = 0, active_keys_1 = 0;
+	if (synth) {
+		uint64_t bit = (uint64_t) 1 << 63;
+		for (int key = 0; key < 64; ++key) {
+			if (synth->note_is_active(key))
+				active_keys_0 |= bit;
+			bit >>= 1;
+			}
+		bit = (uint64_t) 1 << 63;
+		for (int key = 64; key < 128; ++key) {
+			if (synth->note_is_active(key))
+				active_keys_1 |= bit;
+			bit >>= 1;
+			}
+		}
+	audio_to_main_queue.send(ActiveKeys0, active_keys_0);
+	audio_to_main_queue.send(ActiveKeys1, active_keys_1);
 }
 
 

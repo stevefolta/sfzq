@@ -93,5 +93,6 @@ class SFZQPlugin : public CLAPPlugin {
 		void open_file_chooser();
 		void load_sound(std::string path, int subsound = 0);
 		void load_samples();
+		void send_active_keys();
 	};
 

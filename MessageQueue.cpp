@@ -51,7 +51,7 @@ void MessageQueue::send(int message, void* param)
 		}
 }
 
-void MessageQueue::send(int message, int num)
+void MessageQueue::send(int message, int64_t num)
 {
 	Message* msg = back();
 	if (msg) {

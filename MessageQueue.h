@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <stdint.h>
 
 // A ring buffer for sending messages to or from the realtime thread.
 
@@ -11,7 +12,7 @@ class MessageQueue {
 			int	id;
 			union {
 				void*	param;
-				int	num;
+				int64_t	num;
 				};
 			};
 
@@ -21,7 +22,7 @@ class MessageQueue {
 		// Sending.
 		void	send(int message); 	// Send a simple message with no parameters.
 		void	send(int message, void* param);
-		void	send(int message, int num);
+		void	send(int message, int64_t num);
 		Message*	back();
 		void	push();
 

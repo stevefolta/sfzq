@@ -331,11 +331,11 @@ void SFZVoice::calc_pitch_ratio()
 		// CLAP's pitch expression is in the range -120.0 to 120.0 semitones.  But
 		// SFZ also specifies a "bend_up" and "bend_down" range, defaulting to -200
 		// and +200 cents, with a max of +/- 9600 cents.  Here, we'll assume that
-		// CLAP will normally give us -2.0 to +2.0 semitones.
+		// CLAP will normally give us the full range of -120.0 to +120.0 semitones.
 		if (cur_tuning_expression > 0)
-			adjusted_pitch += (cur_tuning_expression / 2.0) * region->bend_up / 100.0;
+			adjusted_pitch += (cur_tuning_expression / 120.0) * region->bend_up / 100.0;
 		else
-			adjusted_pitch += (cur_tuning_expression / 2.0) * region->bend_down / 100.0;
+			adjusted_pitch -= (cur_tuning_expression / 120.0) * region->bend_down / 100.0;
 		}
 	double target_freq = note_hz(adjusted_pitch);
 	double natural_freq = note_hz(region->pitch_keycenter);

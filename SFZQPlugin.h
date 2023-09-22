@@ -89,6 +89,7 @@ class SFZQPlugin : public CLAPPlugin {
 		CairoGUI cairo_gui;
 
 		void process_event(const clap_event_header_t* event);
+		void process_midi_event(const clap_event_midi_t* event);
 		void layout();
 		void open_file_chooser();
 		void load_sound(std::string path, int subsound = 0);

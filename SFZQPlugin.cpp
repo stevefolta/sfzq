@@ -91,7 +91,7 @@ SFZQPlugin::~SFZQPlugin()
 static const std::vector<clap_note_port_info_t> note_in_ports = {
 	{
 		.id = 0,
-		.supported_dialects = CLAP_NOTE_DIALECT_CLAP,
+		.supported_dialects = CLAP_NOTE_DIALECT_CLAP | CLAP_NOTE_DIALECT_MIDI,
 		.preferred_dialect = CLAP_NOTE_DIALECT_CLAP,
 		.name = "in",
 		},
@@ -504,6 +504,63 @@ void SFZQPlugin::process_event(const clap_event_header_t* event)
 			auto expression_event = (const clap_event_note_expression_t*) event;
 			if (expression_event->expression_id == CLAP_NOTE_EXPRESSION_TUNING)
 				synth->tuning_expression_changed(expression_event->value);
+			}
+			break;
+		case CLAP_EVENT_MIDI:
+			process_midi_event((const clap_event_midi_t*) event);
+			break;
+		}
+}
+
+void SFZQPlugin::process_midi_event(const clap_event_midi_t* event)
+{
+	// We'll just translate these to CLAP events.
+
+	auto opcode = event->data[0] & 0xF0;
+	switch (opcode) {
+		case 0x90:
+		case 0x80:
+			{
+			// Note on/off.
+			clap_event_note_t clap_event = {
+				.header = {
+					.size = sizeof(clap_event_note_t),
+					.time = event->header.time,
+					.space_id = event->header.space_id,
+					.type = (opcode == 0x90 ? CLAP_EVENT_NOTE_ON : CLAP_EVENT_NOTE_OFF),
+					.flags = event->header.flags,
+					},
+				.note_id = -1,
+				.port_index = (int16_t) event->port_index,
+				.channel = (int16_t) (event->data[0] & 0x0F),
+				.key = event->data[1],
+				.velocity = event->data[2] / 127.0,
+				};
+			process_event(&clap_event.header);
+			}
+			break;
+
+		case 0xE0:
+			{
+			// Pitch wheel.
+			auto wheel_value = (uint32_t) event->data[2] << 7 | event->data[1];
+			double semitones = 120.0 * ((double) wheel_value - 0x2000) / 0x1FFF;
+			clap_event_note_expression_t clap_event = {
+				.header = {
+					.size = sizeof(clap_event_note_expression_t),
+					.time = event->header.time,
+					.space_id = event->header.space_id,
+					.type = CLAP_EVENT_NOTE_EXPRESSION,
+					.flags = event->header.flags,
+					},
+				.expression_id = CLAP_NOTE_EXPRESSION_TUNING,
+				.note_id = -1,
+				.port_index = (int16_t) event->port_index,
+				.channel = (int16_t) (event->data[0] & 0x0F),
+				.key = -1,
+				.value = semitones,
+				};
+			process_event(&clap_event.header);
 			}
 			break;
 		}

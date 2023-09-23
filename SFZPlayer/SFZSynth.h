@@ -7,6 +7,9 @@
 class SFZVoice;
 class SFZSound;
 class OutBuffer;
+namespace Tunings {
+	class Tuning;
+	}
 
 
 class SFZSynth {
@@ -40,6 +43,8 @@ class SFZSynth {
 		// Called by SFZVoices.
 		void note_ended(int note, int channel, int note_id);
 		double get_tuning_expression() { return cur_tuning_expression; }
+
+		Tunings::Tuning* tuning = nullptr;
 
 	protected:
 		std::vector<SFZVoice*> voices;

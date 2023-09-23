@@ -19,6 +19,7 @@
 #include "CLAPOutBuffer.h"
 #include "Messages.h"
 #include "Settings.h"
+#include "Tunings.h"
 #include <thread>
 #include <string_view>
 #include <iostream>
@@ -187,9 +188,8 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 	auto message = main_to_audio_queue.pop_front();
 	if (message.id == UseSound) {
 		auto old_sound = synth->set_sound((SFZSound*) message.param);
-		if (old_sound) {
+		if (old_sound)
 			audio_to_main_queue.send(DoneWithSound, old_sound);
-			}
 		send_active_keys();
 		if (host)
 			host->request_callback(host);
@@ -198,6 +198,14 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 		synth->use_subsound(message.num);
 		audio_to_main_queue.send(SubsoundChanged, synth->selected_subsound());
 		send_active_keys();
+		if (host)
+			host->request_callback(host);
+		}
+	else if (message.id == UseTuning) {
+		auto old_tuning = synth->tuning;
+		synth->tuning = (Tunings::Tuning*) message.param;
+		if (old_tuning)
+			audio_to_main_queue.send(DoneWithTuning, old_tuning);
 		if (host)
 			host->request_callback(host);
 		}
@@ -400,6 +408,9 @@ void SFZQPlugin::main_thread_tick()
 				break;
 			case VoicesUsed:
 				newest_voices_used = message.num;
+				break;
+			case DoneWithTuning:
+				delete (Tunings::Tuning*) message.param;
 				break;
 			}
 		}

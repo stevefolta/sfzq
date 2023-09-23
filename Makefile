@@ -23,8 +23,8 @@ WIDGET_SOURCES += Label.cpp ProgressBar.cpp TextBox.cpp
 WIDGET_SOURCES += TimeSeconds.cpp
 SOURCES += $(foreach source,$(WIDGET_SOURCES),$(WIDGETS_DIR)/$(source))
 LIBRARIES += X11 cairo
-SUBDIRS += $(SFZ_DIR) $(FRAMEWORK_DIR) $(WIDGETS_DIR)
-CFLAGS += --no-exceptions --no-rtti
+SUBDIRS += $(SFZ_DIR) $(FRAMEWORK_DIR) $(WIDGETS_DIR) $(SFZ_DIR)/vendor/surge
+CFLAGS += --no-rtti
 
 OBJECTS_DIR := objects
 CFLAGS += -Wall

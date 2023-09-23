@@ -7,6 +7,7 @@
 #include "CLAPOutBuffer.h"
 #include "Decibels.h"
 #include "SFZFloat.h"
+#include "Tunings.h"
 #include <sstream>
 #include <math.h>
 #include <iostream>
@@ -322,22 +323,33 @@ void SFZVoice::calc_pitch_ratio()
 {
 	double note = cur_note;
 	note += region->transpose;
-	note += region->tune / 100.0;
+	double target_freq;
 
-	double adjusted_pitch =
-		region->pitch_keycenter +
-		(note - region->pitch_keycenter) * (region->pitch_keytrack / 100.0);
-	if (cur_tuning_expression != 0.0) {
-		// CLAP's pitch expression is in the range -120.0 to 120.0 semitones.  But
-		// SFZ also specifies a "bend_up" and "bend_down" range, defaulting to -200
-		// and +200 cents, with a max of +/- 9600 cents.  Here, we'll assume that
-		// CLAP will normally give us the full range of -120.0 to +120.0 semitones.
-		if (cur_tuning_expression > 0)
-			adjusted_pitch += (cur_tuning_expression / 120.0) * region->bend_up / 100.0;
-		else
-			adjusted_pitch -= (cur_tuning_expression / 120.0) * region->bend_down / 100.0;
+	if (synth->tuning) {
+		//*** TODO: Account for cur_tuning_expression, region->tune, and maybe
+		// region->pitch_keytrack, somehow...
+		target_freq = synth->tuning->frequencyForMidiNote(note);
 		}
-	double target_freq = note_hz(adjusted_pitch);
+
+	else {
+		note += region->tune / 100.0;
+
+		double adjusted_pitch =
+			region->pitch_keycenter +
+			(note - region->pitch_keycenter) * (region->pitch_keytrack / 100.0);
+		if (cur_tuning_expression != 0.0) {
+			// CLAP's pitch expression is in the range -120.0 to 120.0 semitones.  But
+			// SFZ also specifies a "bend_up" and "bend_down" range, defaulting to -200
+			// and +200 cents, with a max of +/- 9600 cents.  Here, we'll assume that
+			// CLAP will normally give us the full range of -120.0 to +120.0 semitones.
+			if (cur_tuning_expression > 0)
+				adjusted_pitch += (cur_tuning_expression / 120.0) * region->bend_up / 100.0;
+			else
+				adjusted_pitch -= (cur_tuning_expression / 120.0) * region->bend_down / 100.0;
+			}
+		target_freq = note_hz(adjusted_pitch);
+		}
+
 	double natural_freq = note_hz(region->pitch_keycenter);
 	pitch_ratio =
 		(target_freq * region->sample->sample_rate) /

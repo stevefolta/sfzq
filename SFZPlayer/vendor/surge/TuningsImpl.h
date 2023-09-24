@@ -461,7 +461,7 @@ inline Tuning::Tuning(const Scale &s_, const KeyboardMapping &k_, bool allowTuni
 
     Scale s = s_;
     KeyboardMapping k = k_;
-    int oSP;
+    int oSP = 0;
     if (s.count <= 0)
         throw TuningError("Unable to tune to a scale with no notes. Your scale provided " +
                           std::to_string(s.count) + " notes.");
@@ -547,7 +547,7 @@ inline Tuning::Tuning(const Scale &s_, const KeyboardMapping &k_, bool allowTuni
     {
         if (scalePositionOfTuningNote == -1 && allowTuningCenterOnUnmapped)
         {
-            int low, high;
+            int low = 0, high = 0;
             bool octave_up = false;
             bool octave_down = false;
             float pitch_high;

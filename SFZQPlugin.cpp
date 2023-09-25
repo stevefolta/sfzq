@@ -29,6 +29,8 @@ static const double progress_bar_height = 20.0;
 static const double subsound_widget_height = 16.0;
 static const double voices_used_label_height = 12.0;
 static const double keyboard_height = 40.0;
+static const double tuning_label_height = 14.0;
+static const double tuning_spacing = 4.0;
 static const double margin = 10.0;
 static const double spacing = 6.0;
 static const double file_chooser_alpha = 0.9;
@@ -56,6 +58,9 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	filename_label->color = { 0.5, 0.5, 0.5 };
 	error_box = new TextBox(&cairo_gui);
 	error_box->text = settings.errors;
+	tuning_label = new Label(&cairo_gui, "Tuning...");
+	tuning_label->font_weight = CAIRO_FONT_WEIGHT_NORMAL;
+	tuning_label->color = { 0.5, 0.5, 0.5 };
 	keyboard = new KeyboardWidget(&cairo_gui);
 	if (settings.show_voices_used) {
 		voices_used_label = new Label(&cairo_gui, "Voices used:");
@@ -71,6 +76,7 @@ SFZQPlugin::~SFZQPlugin()
 	delete subsound_widget;
 	delete error_box;
 	delete voices_used_label;
+	delete tuning_label;
 	delete keyboard;
 	delete file_chooser;
 
@@ -306,6 +312,7 @@ void SFZQPlugin::paint_gui()
 	if (voices_used_label)
 		voices_used_label->paint();
 	error_box->paint();
+	tuning_label->paint();
 	keyboard->paint();
 
 	if (file_chooser) {
@@ -343,6 +350,8 @@ void SFZQPlugin::mouse_pressed(int32_t x, int32_t y, int button)
 		open_file_chooser();
 	else if (subsound_widget && subsound_widget->contains(x, y))
 		tracking_widget = subsound_widget;
+	else if (tuning_label->contains(x, y))
+		open_file_chooser_for_tuning();
 	if (tracking_widget)
 		tracking_widget->mouse_pressed(x, y);
 	cairo_gui_extension->refresh();
@@ -582,25 +591,27 @@ void SFZQPlugin::layout()
 {
 	auto contents_width = gui_width - 2 * margin;
 	filename_label->rect = { margin, margin, contents_width, filename_label_height };
-	double top = margin + filename_label_height + spacing;
+	double upper_top = margin + filename_label_height + spacing;
 	if (progress_bar) {
 		progress_bar->rect = {
-			margin, top,
+			margin, upper_top,
 			contents_width, progress_bar_height };
-		top += progress_bar_height + spacing;
+		upper_top += progress_bar_height + spacing;
 		}
 	if (subsound_widget) {
-		subsound_widget->rect = { margin, top, contents_width, subsound_widget_height };
+		subsound_widget->rect = { margin, upper_top, contents_width, subsound_widget_height };
 		subsound_widget->layout();
-		top += subsound_widget_height + spacing;
+		upper_top += subsound_widget_height + spacing;
 		}
 	if (voices_used_label) {
-		voices_used_label->rect = { margin, top, contents_width, voices_used_label_height };
-		top += voices_used_label_height + spacing;
+		voices_used_label->rect = { margin, upper_top, contents_width, voices_used_label_height };
+		upper_top += voices_used_label_height + spacing;
 		}
-	double keyboard_top = gui_height - margin - keyboard_height;
-	keyboard->rect = { margin, keyboard_top, contents_width, keyboard_height };
-	error_box->rect = { margin, top, contents_width, keyboard_top - top };
+	double lower_top = gui_height - margin - keyboard_height;
+	keyboard->rect = { margin, lower_top, contents_width, keyboard_height };
+	lower_top -= tuning_label_height + tuning_spacing;
+	tuning_label->rect = { margin, lower_top, contents_width, tuning_label_height };
+	error_box->rect = { margin, upper_top, contents_width, lower_top - upper_top };
 	if (file_chooser) {
 		file_chooser->rect = { margin, margin, 0, 0 };
 		file_chooser->resize_to(contents_width, gui_height - 2 * margin);
@@ -629,6 +640,35 @@ void SFZQPlugin::open_file_chooser()
 		file_chooser = nullptr;
 		tracking_widget = nullptr;
 		load_sound(path);
+		});
+	file_chooser->set_cancel_fn([&]() {
+		delete file_chooser;
+		file_chooser = nullptr;
+		tracking_widget = nullptr;
+		});
+	layout();
+}
+
+
+void SFZQPlugin::open_file_chooser_for_tuning()
+{
+	if (file_chooser)
+		return;
+
+	file_chooser = new FileChooser(&cairo_gui, {});
+	file_chooser->set_file_filter([](const char* filename_in) {
+		std::string_view filename(filename_in);
+		auto dot_pos = filename.rfind('.');
+		if (dot_pos == std::string_view::npos)
+			return false;
+		auto extension = filename.substr(dot_pos + 1);
+		return extension == "scl" || extension == "SCL";
+		});
+	file_chooser->set_ok_fn([&](std::string path) {
+		delete file_chooser;
+		file_chooser = nullptr;
+		tracking_widget = nullptr;
+		load_tuning(path);
 		});
 	file_chooser->set_cancel_fn([&]() {
 		delete file_chooser;
@@ -677,6 +717,22 @@ void SFZQPlugin::load_samples()
 	load_to_main_queue.send(SampleLoadComplete);
 	if (host)
 		host->request_callback(host);
+}
+
+
+void SFZQPlugin::load_tuning(std::string path)
+{
+	tuning_label->label = path.substr(path.find_last_of('/') + 1);
+	tuning_label->color = { 0.0, 0.0, 0.0 };
+
+	try {
+		auto scale = Tunings::readSCLFile(path);
+		auto tuning = new Tunings::Tuning(scale);
+		main_to_audio_queue.send(UseTuning, tuning);
+		}
+	catch (const std::exception& e) {
+		error_box->text += std::string("\n") + e.what();
+		}
 }
 
 

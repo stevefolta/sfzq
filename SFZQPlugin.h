@@ -65,6 +65,7 @@ class SFZQPlugin : public CLAPPlugin {
 		FileChooser* file_chooser = nullptr;
 		SubsoundWidget* subsound_widget = nullptr;
 		TextBox* error_box = nullptr;
+		Label* tuning_label = nullptr;
 		KeyboardWidget* keyboard = nullptr;
 		Label* voices_used_label = nullptr;
 		Widget* tracking_widget = nullptr;
@@ -92,8 +93,10 @@ class SFZQPlugin : public CLAPPlugin {
 		void process_midi_event(const clap_event_midi_t* event);
 		void layout();
 		void open_file_chooser();
+		void open_file_chooser_for_tuning();
 		void load_sound(std::string path, int subsound = 0);
 		void load_samples();
+		void load_tuning(std::string path);
 		void send_active_keys();
 	};
 

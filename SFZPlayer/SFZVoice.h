@@ -62,7 +62,6 @@ class SFZVoice {
 
 		void calc_pitch_ratio();
 		void note_ended();
-		double note_hz(double note, const double freq_of_a = 440.0);
 	};
 
 

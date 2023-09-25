@@ -7,6 +7,7 @@
 #include "CLAPOutBuffer.h"
 #include "Decibels.h"
 #include "SFZFloat.h"
+#include "MIDINoteFrequency.h"
 #include "Tunings.h"
 #include <sstream>
 #include <math.h>
@@ -354,14 +355,6 @@ void SFZVoice::calc_pitch_ratio()
 	pitch_ratio =
 		(target_freq * region->sample->sample_rate) /
 		(natural_freq * sample_rate);
-}
-
-
-double SFZVoice::note_hz(double note, const double freq_of_a)
-{
-	note -= 12 * 6 + 9;
-	// Now 0 = A
-	return freq_of_a * pow(2.0, note / 12.0);
 }
 
 

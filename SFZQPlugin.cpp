@@ -212,6 +212,7 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 		synth->tuning = (Tunings::Tuning*) message.param;
 		if (old_tuning)
 			audio_to_main_queue.send(DoneWithTuning, old_tuning);
+		send_active_keys();
 		if (host)
 			host->request_callback(host);
 		}

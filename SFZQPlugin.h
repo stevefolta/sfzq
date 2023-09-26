@@ -59,6 +59,8 @@ class SFZQPlugin : public CLAPPlugin {
 		bool initial_load = false;
 		std::thread load_samples_thread;
 		std::atomic_bool refresh_requested = false;
+		std::string tuning_path;
+		bool tuning_enabled = false;
 
 		Label* filename_label = nullptr;
 		ProgressBar* progress_bar = nullptr;;

@@ -472,6 +472,8 @@ bool SFZQPlugin::save_state(const clap_ostream_t* clap_stream)
 	stream.write_uint32(1); 	// Version.
 	stream.write_string(sound_path);
 	stream.write_uint32(sound_subsound);
+	stream.write_uint32(tuning_enabled);
+	stream.write_string(tuning_path);
 	return stream.ok;
 }
 
@@ -491,6 +493,12 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 	if (!path.empty()) {
 		initial_load = true;
 		load_sound(path, subsound);
+		}
+	if (stream.ok) {
+		tuning_enabled = stream.read_uint32() != 0;
+		tuning_path = stream.read_string();
+		if (!tuning_path.empty())
+			load_tuning(tuning_path);
 		}
 	return true;
 }
@@ -670,6 +678,9 @@ void SFZQPlugin::open_file_chooser_for_tuning()
 		file_chooser = nullptr;
 		tracking_widget = nullptr;
 		load_tuning(path);
+		tuning_path = path;
+		tuning_enabled = true;
+		state_extension->host_mark_dirty();
 		});
 	file_chooser->set_cancel_fn([&]() {
 		delete file_chooser;

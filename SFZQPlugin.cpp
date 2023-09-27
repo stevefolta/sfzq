@@ -9,6 +9,7 @@
 #include "SubsoundWidget.h"
 #include "TextBox.h"
 #include "KeyboardWidget.h"
+#include "Checkbox.h"
 #include "CLAPPosixFDExtension.h"
 #include "CLAPCairoGUIExtension.h"
 #include "CLAPAudioPortsExtension.h"
@@ -58,7 +59,9 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	filename_label->color = { 0.5, 0.5, 0.5 };
 	error_box = new TextBox(&cairo_gui);
 	error_box->text = settings.errors;
-	tuning_label = new Label(&cairo_gui, "Tuning...");
+	tuning_checkbox = new Checkbox(&cairo_gui, "Tuning...");
+	tuning_checkbox->text_color = { 0.5, 0.5, 0.5 };
+	tuning_label = new Label(&cairo_gui, "");
 	tuning_label->font_weight = CAIRO_FONT_WEIGHT_NORMAL;
 	tuning_label->color = { 0.5, 0.5, 0.5 };
 	keyboard = new KeyboardWidget(&cairo_gui);
@@ -76,6 +79,7 @@ SFZQPlugin::~SFZQPlugin()
 	delete subsound_widget;
 	delete error_box;
 	delete voices_used_label;
+	delete tuning_checkbox;
 	delete tuning_label;
 	delete keyboard;
 	delete file_chooser;
@@ -313,6 +317,7 @@ void SFZQPlugin::paint_gui()
 	if (voices_used_label)
 		voices_used_label->paint();
 	error_box->paint();
+	tuning_checkbox->paint();
 	tuning_label->paint();
 	keyboard->paint();
 
@@ -351,6 +356,8 @@ void SFZQPlugin::mouse_pressed(int32_t x, int32_t y, int button)
 		open_file_chooser();
 	else if (subsound_widget && subsound_widget->contains(x, y))
 		tracking_widget = subsound_widget;
+	else if (tuning_checkbox->contains(x, y))
+		tracking_widget = tuning_checkbox;
 	else if (tuning_label->contains(x, y))
 		open_file_chooser_for_tuning();
 	if (tracking_widget)
@@ -364,7 +371,20 @@ void SFZQPlugin::mouse_released(int32_t x, int32_t y, int button)
 		return;
 
 	if (tracking_widget && tracking_widget->mouse_released(x, y)) {
-		// If we ever have any buttons in the main UI, handle them here.
+		if (tracking_widget == tuning_checkbox) {
+			if (tuning_checkbox->checked) {
+				tuning_label->color = { 0.0, 0.0, 0.0 };
+				if (tuning_path.empty())
+					open_file_chooser_for_tuning();
+				else
+					load_tuning(tuning_path);
+				}
+			else {
+				main_to_audio_queue.send(UseTuning, nullptr);
+				tuning_enabled = false;
+				state_extension->host_mark_dirty();
+				}
+			}
 		}
 	tracking_widget = nullptr;
 	cairo_gui_extension->refresh();
@@ -496,8 +516,9 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 		}
 	if (stream.ok) {
 		tuning_enabled = stream.read_uint32() != 0;
+		tuning_checkbox->checked = tuning_enabled;
 		tuning_path = stream.read_string();
-		if (!tuning_path.empty())
+		if (!tuning_path.empty() && tuning_enabled)
 			load_tuning(tuning_path);
 		}
 	return true;
@@ -619,7 +640,12 @@ void SFZQPlugin::layout()
 	double lower_top = gui_height - margin - keyboard_height;
 	keyboard->rect = { margin, lower_top, contents_width, keyboard_height };
 	lower_top -= tuning_label_height + tuning_spacing;
-	tuning_label->rect = { margin, lower_top, contents_width, tuning_label_height };
+	double tuning_checkbox_width = tuning_checkbox->drawn_width();
+	tuning_checkbox->rect = { margin, lower_top, tuning_checkbox_width, tuning_label_height };
+	tuning_label->rect = {
+		margin + tuning_checkbox_width, lower_top,
+		contents_width - tuning_checkbox_width, tuning_label_height
+		};
 	error_box->rect = { margin, upper_top, contents_width, lower_top - upper_top };
 	if (file_chooser) {
 		file_chooser->rect = { margin, margin, 0, 0 };
@@ -677,15 +703,21 @@ void SFZQPlugin::open_file_chooser_for_tuning()
 		delete file_chooser;
 		file_chooser = nullptr;
 		tracking_widget = nullptr;
+		bool had_tuning = !tuning_path.empty();
 		load_tuning(path);
 		tuning_path = path;
-		tuning_enabled = true;
+		if (!had_tuning) {
+			tuning_enabled = true;
+			tuning_checkbox->enabled = tuning_enabled;
+			}
 		state_extension->host_mark_dirty();
 		});
 	file_chooser->set_cancel_fn([&]() {
 		delete file_chooser;
 		file_chooser = nullptr;
 		tracking_widget = nullptr;
+		if (!tuning_enabled)
+			tuning_checkbox->enabled = false;
 		});
 	layout();
 }
@@ -741,6 +773,10 @@ void SFZQPlugin::load_tuning(std::string path)
 		auto scale = Tunings::readSCLFile(path);
 		auto tuning = new Tunings::Tuning(scale);
 		main_to_audio_queue.send(UseTuning, tuning);
+
+		tuning_checkbox->text = "Tuning: ";
+		tuning_checkbox->text_color = { 0.0, 0.0, 0.0 };
+		layout();
 		}
 	catch (const std::exception& e) {
 		error_box->text += std::string("\n") + e.what();

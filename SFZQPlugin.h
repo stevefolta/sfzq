@@ -15,6 +15,7 @@ class ProgressBar;
 class SubsoundWidget;
 class TextBox;
 class KeyboardWidget;
+class Checkbox;
 
 
 class SFZQPlugin : public CLAPPlugin {
@@ -67,6 +68,7 @@ class SFZQPlugin : public CLAPPlugin {
 		FileChooser* file_chooser = nullptr;
 		SubsoundWidget* subsound_widget = nullptr;
 		TextBox* error_box = nullptr;
+		Checkbox* tuning_checkbox = nullptr;
 		Label* tuning_label = nullptr;
 		KeyboardWidget* keyboard = nullptr;
 		Label* voices_used_label = nullptr;

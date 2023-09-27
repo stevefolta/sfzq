@@ -44,6 +44,11 @@ void SettingsParser::parse_setting(std::string_view setting_name, std::string_vi
 		if (!settings.samples_directory.empty() && settings.samples_directory[0] == '~')
 			settings.samples_directory = Settings::home_path() + settings.samples_directory.substr(1);
 		}
+	else if (setting_name == "tunings-directory") {
+		settings.tunings_directory = unquote_string(value_token);
+		if (!settings.tunings_directory.empty() && settings.tunings_directory[0] == '~')
+			settings.tunings_directory = Settings::home_path() + settings.tunings_directory.substr(1);
+		}
 	else if (setting_name == "num-voices") {
 		auto value = parse_uint32(value_token);
 		if (value >= 0)

@@ -41,5 +41,10 @@ Sets the maximum number of voices that can be sounded at once.
 Controls whether current number of voices used is displayed in the UI.   Set to
 <code>true</code> or <code>false</code>.
 </dd>
+<dt> tunings-directory = "<i>path</i>" </dt>
+<dd>
+Sets a default path where you keep your tunings.  When the file chooser comes
+up to choose a tuning, it will start in this directory.
+</dd>
 </dl>
 

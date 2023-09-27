@@ -691,6 +691,8 @@ void SFZQPlugin::open_file_chooser_for_tuning()
 		return;
 
 	file_chooser = new FileChooser(&cairo_gui, {});
+	if (!settings.tunings_directory.empty())
+		file_chooser->set_path(settings.tunings_directory);
 	file_chooser->set_file_filter([](const char* filename_in) {
 		std::string_view filename(filename_in);
 		auto dot_pos = filename.rfind('.');

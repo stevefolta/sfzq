@@ -55,5 +55,7 @@ class FileList : public Widget {
 		Rect scrollbar_rect();
 		void update_scrollbar();
 		double get_line_height();
+		int num_items_shown();
+		void show_selected_item();
 	};
 

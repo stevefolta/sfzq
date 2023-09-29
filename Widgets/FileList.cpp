@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <math.h>
 #include <algorithm>
 #include <iostream>
 
@@ -197,10 +198,32 @@ void FileList::special_key_pressed(std::string_view special_key)
 	if (special_key == "<ArrowDown>") {
 		if (selected_index < (int) entries.size() - 1)
 			selected_index += 1;
+		show_selected_item();
 		}
 	else if (special_key == "<ArrowUp>") {
 		if (selected_index > 0)
 			selected_index -= 1;
+		show_selected_item();
+		}
+	else if (special_key == "<PageDown>") {
+		selected_index += num_items_shown();
+		if (selected_index >= (int) entries.size())
+			selected_index = entries.size() - 1;
+		show_selected_item();
+		}
+	else if (special_key == "<PageUp>") {
+		selected_index -= num_items_shown();
+		if (selected_index < 0)
+			selected_index = 0;
+		show_selected_item();
+		}
+	else if (special_key == "<Home>") {
+		selected_index = 0;
+		show_selected_item();
+		}
+	else if (special_key == "<End>") {
+		selected_index = entries.size() - 1;
+		show_selected_item();
 		}
 }
 
@@ -268,6 +291,31 @@ double FileList::get_line_height()
 	cairo_font_extents_t font_extents;
 	cairo_font_extents(cairo, &font_extents);
 	return font_extents.height;
+}
+
+
+int FileList::num_items_shown()
+{
+	return rect.height / get_line_height();
+}
+
+
+void FileList::show_selected_item()
+{
+	// Is it already (fully) visible?
+	double line_height = get_line_height();
+	int first_full_index = ceil(scrollbar->value / line_height);
+	int last_full_index = floor((scrollbar->value + rect.height) / line_height) - 1;
+	if (selected_index >= first_full_index && selected_index <= last_full_index)
+		return;
+	if (selected_index < 0)
+		return;
+
+	scrollbar->value = (selected_index + 1) * line_height - rect.height / 2;
+	if (scrollbar->value < 0)
+		scrollbar->value = 0;
+	else if (scrollbar->value > scrollbar->max)
+		scrollbar->value = scrollbar->max;
 }
 
 

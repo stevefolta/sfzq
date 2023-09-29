@@ -48,3 +48,8 @@ up to choose a tuning, it will start in this directory.
 </dd>
 </dl>
 
+
+### Tunings
+
+Alternate ("microtonal") tunings are supported in the Scala (".scl") file format (thanks to the 
+[Surge Tuning Library](https://surge-synth-team.org/tuning-library/)).

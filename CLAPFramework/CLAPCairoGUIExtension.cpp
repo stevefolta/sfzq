@@ -302,6 +302,8 @@ void CLAPCairoGUIExtension::handle_key_event(XKeyEvent* event)
 		}
 
 	// Regular keys.
+	// XLookupString returns Latin-1 characters, so we'll need to translate them
+	// to UTF-8.
 	for (const char* p = buffer; *p; ++p) {
 		uint8_t c = (uint8_t) *p;
 		if (c < 0x80)

@@ -398,7 +398,8 @@ void SFZQPlugin::mouse_moved(int32_t x, int32_t y)
 
 void SFZQPlugin::key_pressed(std::string_view key)
 {
-	/***/
+	if (file_chooser)
+		file_chooser->key_pressed(key);
 }
 
 void SFZQPlugin::special_key_pressed(std::string_view special_key)

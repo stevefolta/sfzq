@@ -34,6 +34,7 @@ FileList::~FileList()
 void FileList::set_dir(std::string path)
 {
 	entries.clear();
+	search_string.clear();
 	DIR* dir = opendir(path.c_str());
 	if (dir == NULL) {
 		update_scrollbar();
@@ -195,7 +196,39 @@ void FileList::scroll_up(int x, int y)
 
 void FileList::key_pressed(std::string_view key)
 {
-	/***/
+	if (entries.empty())
+		return;
+
+	// Update the search_string.
+	if (key == "\b" || key == "\x7F") {
+		if (!search_string.empty()) {
+			// Remove last UTF-8 character.
+			while ((search_string[search_string.size() - 1] & 0xC0) == 0x80)
+				search_string = search_string.substr(0, search_string.size() - 1);
+			search_string = search_string.substr(0, search_string.size() - 1);
+			if (search_string.empty())
+				return;
+			}
+		}
+	else if (key < " ") {
+		// Ignore control characters.
+		return;
+		}
+	else
+		search_string += key;
+
+	// Search for the last entry less than the string.
+	int left = 0;
+	int right = entries.size();
+	while (left < right) {
+		int middle = (left + right) / 2;
+		if (entries[middle].name < search_string)
+			left = middle + 1;
+		else
+			right = middle;
+		}
+	selected_index = left;
+	show_selected_item();
 }
 
 void FileList::special_key_pressed(std::string_view special_key)

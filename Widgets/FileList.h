@@ -49,6 +49,7 @@ class FileList : public Widget {
 		Widget* tracking_widget = nullptr;
 		int selected_index = -1;
 		TimeSeconds last_click_time;
+		std::string search_string;
 		const char* font = nullptr;
 		double font_size = 16.0;
 		cairo_font_weight_t font_weight = CAIRO_FONT_WEIGHT_NORMAL;

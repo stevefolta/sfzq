@@ -192,6 +192,19 @@ void FileList::scroll_up(int x, int y)
 }
 
 
+void FileList::special_key_pressed(std::string_view special_key)
+{
+	if (special_key == "<ArrowDown>") {
+		if (selected_index < (int) entries.size() - 1)
+			selected_index += 1;
+		}
+	else if (special_key == "<ArrowUp>") {
+		if (selected_index > 0)
+			selected_index -= 1;
+		}
+}
+
+
 void FileList::resize_to(int width, int height)
 {
 	rect.width = width;

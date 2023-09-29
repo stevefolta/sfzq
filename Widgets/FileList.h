@@ -27,6 +27,7 @@ class FileList : public Widget {
 		void mouse_moved(int x, int y);
 		void scroll_down(int x, int y);
 		void scroll_up(int x, int y) ;
+		void special_key_pressed(std::string_view special_key);
 
 		void resize_to(int width, int height);
 

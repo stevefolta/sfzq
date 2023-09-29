@@ -327,7 +327,12 @@ void SFZVoice::calc_pitch_ratio()
 	double target_freq;
 
 	if (synth->tuning) {
-		target_freq = synth->tuning->frequencyForMidiNote(note);
+		if (region->pitch_keytrack == 0.0)
+			target_freq = note_hz(region->pitch_keycenter);
+		else {
+			// Treat it like region->pitch_keytrack == 100.0, even if it's not.
+			target_freq = synth->tuning->frequencyForMidiNote(note);
+			}
 		if (cur_tuning_expression != 0 || region->tune != 0) {
 			// region->tune, region->bend_up, and region->bend_down are in semitones,
 			// which is inherently 12-TET.  So we'll convert to a floating-point 12-TET
@@ -337,7 +342,6 @@ void SFZVoice::calc_pitch_ratio()
 				semitones += (cur_tuning_expression / 120.0) * region->bend_up / 100.0;
 			else
 				semitones -= (cur_tuning_expression / 120.0) * region->bend_down / 100.0;
-			//*** TODO: Account for region->pitch_keytrack, somehow...
 			target_freq = note_hz(note_for_frequency(target_freq) + semitones);
 			}
 		}

@@ -2,6 +2,7 @@
 
 #include "clap/clap.h"
 #include <vector>
+#include <string>
 #include <string.h>
 
 class CLAPPosixFDExtension;
@@ -42,6 +43,8 @@ class CLAPPlugin {
 		virtual void mouse_pressed(int32_t x, int32_t y, int button) {}
 		virtual void mouse_released(int32_t x, int32_t y, int button) {}
 		virtual void mouse_moved(int32_t x, int32_t y) {}
+		virtual void key_pressed(std::string_view key) {}
+		virtual void special_key_pressed(std::string_view special_key) {}
 		virtual bool can_resize_gui() { return false; }
 		virtual bool resize_gui(uint32_t width, uint32_t height) { return false; }
 		CLAPAudioPortsExtension* audio_ports_extension = nullptr;

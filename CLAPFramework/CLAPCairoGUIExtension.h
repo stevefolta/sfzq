@@ -47,6 +47,7 @@ class CLAPCairoGUIExtension : public CLAPExtension {
 		bool needs_initial_paint = true;
 
 		void process_x11_event(XEvent* event);
+		void handle_key_event(XKeyEvent* event);
 		void put_image();
 	};
 

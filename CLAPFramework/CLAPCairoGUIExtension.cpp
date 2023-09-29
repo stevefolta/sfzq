@@ -3,6 +3,7 @@
 #include "CLAPPosixFDExtension.h"
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
+#include <map>
 #include <iostream>
 
 
@@ -266,8 +267,60 @@ void CLAPCairoGUIExtension::process_x11_event(XEvent* event)
 			if (event->xmotion.window == window)
 				plugin->mouse_moved(event->xmotion.x, event->xmotion.y);
 			break;
+		case KeyPress:
+			if (event->xkey.window == window)
+				handle_key_event(&event->xkey);
+			break;
 		}
 }
+
+static const std::map<KeySym, const char*> special_keys = {
+	{ XK_Up, "<ArrowUp>" }, { XK_Down, "<ArrowDown>" },
+	{ XK_Left, "<ArrowLeft>" }, { XK_Right, "<ArrowRight>" },
+	{ XK_Page_Up, "<PageUp>" }, { XK_Page_Down, "<PageDown>" },
+	{ XK_Home, "<Home>" }, { XK_End, "<End>" },
+	};
+
+static const char* cp_1252_chars[32] = {
+	"\u20AC", nullptr, "\u201A", "\u0192", "\u201E", "\u2026", "\u2020", "\u2021",
+	"\u02C6", "\u2030", "\u0160", "\u2039", "\u0152", nullptr, "\u017D", nullptr,
+	nullptr, "\u2018", "\u2019", "\u201C", "\u201D", "\u2022", "\u2013", "\u2014",
+	"\u02DC", "\u2122", "\u0161", "\u203A", "\u0153", nullptr, "\u017E", "\u0178",
+	};
+
+void CLAPCairoGUIExtension::handle_key_event(XKeyEvent* event)
+{
+	char buffer[64];
+	KeySym key_sym = 0;
+	XLookupString(event, buffer, sizeof(buffer), &key_sym, nullptr);
+
+	// Special keys.
+	const auto& it = special_keys.find(key_sym);
+	if (it != special_keys.end()) {
+		plugin->special_key_pressed(it->second);
+		return;
+		}
+
+	// Regular keys.
+	for (const char* p = buffer; *p; ++p) {
+		uint8_t c = (uint8_t) *p;
+		if (c < 0x80)
+			plugin->key_pressed(std::string_view((char*) &c, 1));
+		else if (c < 0xA0) {
+			auto translated_char = cp_1252_chars[c - 0x80];
+			if (translated_char)
+				plugin->key_pressed(translated_char);
+			}
+		else {
+			char out[4];
+			out[0] = 0xC0 | c >> 6;
+			out[1] = 0x80 | (c & 0x3F);
+			out[2] = 0;
+			plugin->key_pressed(out);
+			}
+		}
+}
+
 
 void CLAPCairoGUIExtension::put_image()
 {

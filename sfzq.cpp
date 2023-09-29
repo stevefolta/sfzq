@@ -11,7 +11,7 @@ static const std::vector<clap_plugin_descriptor_t> our_descriptors = {
 		.vendor = "Steve Folta",
 		.features = (const char*[]) {
 			CLAP_PLUGIN_FEATURE_INSTRUMENT,
-			CLAP_PLUGIN_FEATURE_SYNTHESIZER,
+			CLAP_PLUGIN_FEATURE_SAMPLER,
 			CLAP_PLUGIN_FEATURE_STEREO,
 			},
 		},

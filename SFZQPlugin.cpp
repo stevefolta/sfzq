@@ -396,6 +396,17 @@ void SFZQPlugin::mouse_moved(int32_t x, int32_t y)
 		tracking_widget->mouse_moved(x, y);
 }
 
+void SFZQPlugin::key_pressed(std::string_view key)
+{
+	/***/
+}
+
+void SFZQPlugin::special_key_pressed(std::string_view special_key)
+{
+	if (file_chooser)
+		file_chooser->special_key_pressed(special_key);
+}
+
 
 void SFZQPlugin::main_thread_tick()
 {

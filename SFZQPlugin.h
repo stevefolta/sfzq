@@ -42,6 +42,8 @@ class SFZQPlugin : public CLAPPlugin {
 		void mouse_pressed(int32_t x, int32_t y, int button);
 		void mouse_released(int32_t x, int32_t y, int button);
 		void mouse_moved(int32_t x, int32_t y);
+		void key_pressed(std::string_view key);
+		void special_key_pressed(std::string_view special_key);
 		void main_thread_tick();
 
 		bool save_state(const clap_ostream_t* stream);

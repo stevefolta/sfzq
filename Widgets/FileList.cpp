@@ -193,6 +193,11 @@ void FileList::scroll_up(int x, int y)
 }
 
 
+void FileList::key_pressed(std::string_view key)
+{
+	/***/
+}
+
 void FileList::special_key_pressed(std::string_view special_key)
 {
 	if (special_key == "<ArrowDown>") {

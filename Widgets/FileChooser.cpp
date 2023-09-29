@@ -134,6 +134,14 @@ void FileChooser::mouse_moved(int x, int y)
 }
 
 
+void FileChooser::key_pressed(std::string_view key)
+{
+	if (key == "\n" || key == "\r")
+		enter_selected_entry();
+	else
+		file_list->key_pressed(key);
+}
+
 void FileChooser::special_key_pressed(std::string_view special_key)
 {
 	file_list->special_key_pressed(special_key);

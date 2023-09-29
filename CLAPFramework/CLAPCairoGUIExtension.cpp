@@ -292,7 +292,7 @@ void CLAPCairoGUIExtension::handle_key_event(XKeyEvent* event)
 {
 	char buffer[64];
 	KeySym key_sym = 0;
-	XLookupString(event, buffer, sizeof(buffer), &key_sym, nullptr);
+	int num_chars = XLookupString(event, buffer, sizeof(buffer), &key_sym, nullptr);
 
 	// Special keys.
 	const auto& it = special_keys.find(key_sym);
@@ -304,7 +304,8 @@ void CLAPCairoGUIExtension::handle_key_event(XKeyEvent* event)
 	// Regular keys.
 	// XLookupString returns Latin-1 characters, so we'll need to translate them
 	// to UTF-8.
-	for (const char* p = buffer; *p; ++p) {
+	const char* end = buffer + num_chars;
+	for (const char* p = buffer; p < end; ++p) {
 		uint8_t c = (uint8_t) *p;
 		if (c < 0x80)
 			plugin->key_pressed(std::string_view((char*) &c, 1));

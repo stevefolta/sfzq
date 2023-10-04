@@ -99,7 +99,11 @@ class SFZQPlugin : public CLAPPlugin {
 		void process_midi_event(const clap_event_midi_t* event);
 		void layout();
 		void open_file_chooser();
+		void file_chosen(std::string path);
+		void file_choice_canceled();
 		void open_file_chooser_for_tuning();
+		void tuning_file_chosen(std::string path);
+		void tuning_file_choice_canceled();
 		void load_sound(std::string path, int subsound = 0);
 		void load_samples();
 		void load_tuning(std::string path);

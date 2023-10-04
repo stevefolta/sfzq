@@ -339,7 +339,7 @@ void SFZQPlugin::paint_gui()
 void SFZQPlugin::mouse_pressed(int32_t x, int32_t y, int button)
 {
 	if (button == Button4 || button == Button5) {
-		if (file_chooser->contains(x, y)) {
+		if (file_chooser && file_chooser->contains(x, y)) {
 			if (button == Button5)
 				file_chooser->scroll_down(x, y);
 			else
@@ -682,18 +682,24 @@ void SFZQPlugin::open_file_chooser()
 		auto extension = filename.substr(dot_pos + 1);
 		return extension == "sfz" || extension == "SFZ";
 		});
-	file_chooser->set_ok_fn([&](std::string path) {
-		delete file_chooser;
-		file_chooser = nullptr;
-		tracking_widget = nullptr;
-		load_sound(path);
-		});
-	file_chooser->set_cancel_fn([&]() {
-		delete file_chooser;
-		file_chooser = nullptr;
-		tracking_widget = nullptr;
-		});
+	file_chooser->set_ok_fn([&](std::string path) { file_chosen(path); });
+	file_chooser->set_cancel_fn([&]() { file_choice_canceled(); });
 	layout();
+}
+
+void SFZQPlugin::file_chosen(std::string path)
+{
+	delete file_chooser;
+	file_chooser = nullptr;
+	tracking_widget = nullptr;
+	load_sound(path);
+}
+
+void SFZQPlugin::file_choice_canceled()
+{
+	delete file_chooser;
+	file_chooser = nullptr;
+	tracking_widget = nullptr;
 }
 
 
@@ -713,28 +719,36 @@ void SFZQPlugin::open_file_chooser_for_tuning()
 		auto extension = filename.substr(dot_pos + 1);
 		return extension == "scl" || extension == "SCL";
 		});
-	file_chooser->set_ok_fn([&](std::string path) {
-		delete file_chooser;
-		file_chooser = nullptr;
-		tracking_widget = nullptr;
-		bool had_tuning = !tuning_path.empty();
-		load_tuning(path);
-		tuning_path = path;
-		if (!had_tuning) {
-			tuning_enabled = true;
-			tuning_checkbox->enabled = tuning_enabled;
-			}
-		state_extension->host_mark_dirty();
-		});
-	file_chooser->set_cancel_fn([&]() {
-		delete file_chooser;
-		file_chooser = nullptr;
-		tracking_widget = nullptr;
-		if (!tuning_enabled)
-			tuning_checkbox->enabled = false;
-		});
+	file_chooser->set_ok_fn([&](std::string path) { tuning_file_chosen(path); });
+	file_chooser->set_cancel_fn([&]() { tuning_file_choice_canceled(); });
 	layout();
 }
+
+void SFZQPlugin::tuning_file_chosen(std::string path)
+{
+	delete file_chooser;
+	file_chooser = nullptr;
+	tracking_widget = nullptr;
+	bool had_tuning = !tuning_path.empty();
+	load_tuning(path);
+	tuning_path = path;
+	if (!had_tuning) {
+		tuning_enabled = true;
+		tuning_checkbox->enabled = tuning_enabled;
+		}
+	state_extension->host_mark_dirty();
+}
+
+void SFZQPlugin::tuning_file_choice_canceled()
+{
+	delete file_chooser;
+	file_chooser = nullptr;
+	tracking_widget = nullptr;
+	if (!tuning_enabled)
+		tuning_checkbox->enabled = false;
+}
+
+
 
 
 void SFZQPlugin::load_sound(std::string path, int subsound)

@@ -15,7 +15,7 @@ MessageQueue::MessageQueue(int capacity_in)
 
 MessageQueue::~MessageQueue()
 {
-	delete ring;
+	delete[] ring;
 }
 
 

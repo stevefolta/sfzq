@@ -119,15 +119,15 @@ SF2::Hydra::Hydra()
 
 SF2::Hydra::~Hydra()
 {
-	delete phdr_items;
-	delete pbag_items;
-	delete pmod_items;
-	delete pgen_items;
-	delete inst_items;
-	delete ibag_items;
-	delete imod_items;
-	delete igen_items;
-	delete shdr_items;
+	delete[] phdr_items;
+	delete[] pbag_items;
+	delete[] pmod_items;
+	delete[] pgen_items;
+	delete[] inst_items;
+	delete[] ibag_items;
+	delete[] imod_items;
+	delete[] igen_items;
+	delete[] shdr_items;
 }
 
 

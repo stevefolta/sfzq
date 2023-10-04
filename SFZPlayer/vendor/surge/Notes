@@ -1,0 +1,6 @@
+This comes from:
+	<https://surge-synth-team.org/tuning-library/> (website)
+	<https://github.com/surge-synthesizer/tuning-library> (GitHub)
+
+It has been modified to work when exceptions aren't enabled.
+

@@ -778,23 +778,29 @@ void SFZQPlugin::load_samples()
 }
 
 
+std::string Tunings::tuning_error;
+
 void SFZQPlugin::load_tuning(std::string path)
 {
 	tuning_label->label = path.substr(path.find_last_of('/') + 1);
 	tuning_label->color = { 0.0, 0.0, 0.0 };
 
-	try {
-		auto scale = Tunings::readSCLFile(path);
-		auto tuning = new Tunings::Tuning(scale);
-		main_to_audio_queue.send(UseTuning, tuning);
+	Tunings::tuning_error = "";
+	auto scale = Tunings::readSCLFile(path);
+	if (!Tunings::tuning_error.empty()) {
+		error_box->text += std::string("\n") + Tunings::tuning_error;
+		return;
+		}
+	auto tuning = new Tunings::Tuning(scale);
+	if (!Tunings::tuning_error.empty()) {
+		error_box->text += std::string("\n") + Tunings::tuning_error;
+		return;
+		}
+	main_to_audio_queue.send(UseTuning, tuning);
 
-		tuning_checkbox->text = "Tuning: ";
-		tuning_checkbox->text_color = { 0.0, 0.0, 0.0 };
-		layout();
-		}
-	catch (const std::exception& e) {
-		error_box->text += std::string("\n") + e.what();
-		}
+	tuning_checkbox->text = "Tuning: ";
+	tuning_checkbox->text_color = { 0.0, 0.0, 0.0 };
+	layout();
 }
 
 

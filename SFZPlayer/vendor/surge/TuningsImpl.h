@@ -98,7 +98,12 @@ inline Tone toneFromString(const std::string &line, int lineno)
             if (lineno >= 0)
                 s += "Line " + std::to_string(lineno) + ".";
             s += " Line is '" + line + "'.";
+#ifndef TUNINGS_NO_EXCEPTIONS
             throw TuningError(s);
+#else
+						tuning_error = s;
+						return Tone();
+#endif
         }
         // 2^(cents/1200) = n/d
         // cents = 1200 * log(n/d) / log(2)
@@ -137,7 +142,12 @@ inline Scale readSCLStream(std::istream &inf)
             res.count = atoi(line.c_str());
             if (res.count < 1)
             {
+#ifndef TUNINGS_NO_EXCEPTIONS
                 throw TuningError("Invalid SCL note count.");
+#else
+								tuning_error = "Invalid SCL note count.";
+								return Scale();
+#endif
             }
             state = read_note;
             break;
@@ -168,7 +178,12 @@ inline Scale readSCLStream(std::istream &inf)
             oss << "unknown state.";
             break;
         }
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw TuningError(oss.str());
+#else
+				tuning_error = oss.str();
+				return Scale();
+#endif
     }
 
     if ((int)res.tones.size() != res.count)
@@ -176,7 +191,12 @@ inline Scale readSCLStream(std::istream &inf)
         std::string s =
             "Read fewer notes than count in file. Count = " + std::to_string(res.count) +
             " notes. Array size = " + std::to_string(res.tones.size());
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw TuningError(s);
+#else
+				tuning_error = s;
+				return Scale();
+#endif
     }
     res.rawText = rawOSS.str();
     return res;
@@ -189,7 +209,12 @@ inline Scale readSCLFile(std::string fname)
     if (!inf.is_open())
     {
         std::string s = "Unable to open file '" + fname + "'";
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw TuningError(s);
+#else
+				tuning_error = s;
+				return Scale();
+#endif
     }
 
     auto res = readSCLStream(inf);
@@ -231,11 +256,26 @@ inline Scale evenTemperament12NoteScale()
 inline Scale evenDivisionOfSpanByM(int Span, int M)
 {
     if (Span <= 0)
+		{
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw Tunings::TuningError("Span should be a positive number. You entered " +
                                    std::to_string(Span));
+#else
+        tuning_error = ("Span should be a positive number. You entered " + std::to_string(Span));
+				return Scale();
+#endif
+		}
     if (M <= 0)
+		{
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw Tunings::TuningError(
             "You must divide the period into at least one step. You entered " + std::to_string(M));
+#else
+        tuning_error =
+					"You must divide the period into at least one step. You entered " + std::to_string(M);
+				return Scale();
+#endif
+		}
 
     std::ostringstream oss;
     oss.imbue(std::locale("C"));
@@ -256,11 +296,25 @@ inline Scale evenDivisionOfSpanByM(int Span, int M)
 inline Scale evenDivisionOfCentsByM(float Cents, int M, const std::string &lastLabel)
 {
     if (Cents <= 0)
+		{
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw Tunings::TuningError("Cents should be a positive number. You entered " +
                                    std::to_string(Cents));
+#else
+				tuning_error = "Cents should be a positive number. You entered " + std::to_string(Cents);
+				return Scale();
+#endif
+		}
     if (M <= 0)
+		{
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw Tunings::TuningError(
             "You must divide the period into at least one step. You entered " + std::to_string(M));
+#else
+				tuning_error = 
+					"You must divide the period into at least one step. You entered " + std::to_string(M);
+#endif
+		}
 
     std::ostringstream oss;
     oss.imbue(std::locale("C"));
@@ -332,9 +386,16 @@ inline KeyboardMapping readKBMStream(std::istream &inf)
             }
             if (!validLine)
             {
+#ifndef TUNINGS_NO_EXCEPTIONS
                 throw TuningError("Invalid line " + std::to_string(lineno) + ". line='" + line +
                                   "'. Bad character is '" + badChar + "/" +
                                   std::to_string((int)badChar) + "'");
+#else
+							tuning_error =
+								"Invalid line " + std::to_string(lineno) + ". line='" + line +
+								"'. Bad character is '" + badChar + "/" +
+								std::to_string((int)badChar) + "'";
+#endif
             }
         }
 
@@ -410,14 +471,27 @@ inline KeyboardMapping readKBMStream(std::istream &inf)
             oss << "unknown state";
             break;
         }
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw TuningError(oss.str());
+#else
+				tuning_error = oss.str();
+				return KeyboardMapping();
+#endif
     }
 
     if ((int)res.keys.size() != res.count)
     {
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw TuningError("Different number of keys than mapping file indicates. Count is " +
                           std::to_string(res.count) + " and we parsed " +
                           std::to_string(res.keys.size()) + " keys.");
+#else
+			tuning_error =
+				"Different number of keys than mapping file indicates. Count is " +
+				std::to_string(res.count) + " and we parsed " +
+				std::to_string(res.keys.size()) + " keys.";
+			return KeyboardMapping();
+#endif
     }
 
     res.rawText = rawOSS.str();
@@ -431,7 +505,12 @@ inline KeyboardMapping readKBMFile(std::string fname)
     if (!inf.is_open())
     {
         std::string s = "Unable to open file '" + fname + "'";
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw TuningError(s);
+#else
+				tuning_error = s;
+				return KeyboardMapping();
+#endif
     }
 
     auto res = readKBMStream(inf);
@@ -463,8 +542,17 @@ inline Tuning::Tuning(const Scale &s_, const KeyboardMapping &k_, bool allowTuni
     KeyboardMapping k = k_;
     int oSP = 0;
     if (s.count <= 0)
+		{
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw TuningError("Unable to tune to a scale with no notes. Your scale provided " +
                           std::to_string(s.count) + " notes.");
+#else
+			tuning_error =
+				"Unable to tune to a scale with no notes. Your scale provided " +
+				std::to_string(s.count) + " notes.";
+			return;
+#endif
+		}
 
     int kbmRotations{1};
     for (const auto &kv : k.keys)
@@ -505,8 +593,15 @@ inline Tuning::Tuning(const Scale &s_, const KeyboardMapping &k_, bool allowTuni
     // smaller than the size of the scale.
     if (k.octaveDegrees > s.count)
     {
+#ifndef TUNINGS_NO_EXCEPTIONS
         throw TuningError("Unable to apply mapping of size " + std::to_string(k.octaveDegrees) +
                           " to smaller scale of size " + std::to_string(s.count));
+#else
+			tuning_error =
+				"Unable to apply mapping of size " + std::to_string(k.octaveDegrees) +
+				" to smaller scale of size " + std::to_string(s.count);
+			return;
+#endif
     }
 
     double pitches[N];
@@ -537,7 +632,12 @@ inline Tuning::Tuning(const Scale &s_, const KeyboardMapping &k_, bool allowTuni
                  std::to_string(oSP) + " given your scale root of " + std::to_string(k.middleNote) +
                  " which your mapping does not assign. Please set your tuning constant "
                  "note to a mapped key.";
+#ifndef TUNINGS_NO_EXCEPTIONS
             throw TuningError(s);
+#else
+						tuning_error = s;
+						return;
+#endif
         }
     }
     double tuningCenterPitchOffset;
@@ -639,7 +739,12 @@ inline Tuning::Tuning(const Scale &s_, const KeyboardMapping &k_, bool allowTuni
                          std::to_string(k.middleNote) +
                          " which your mapping does not assign. Please set your tuning constant "
                          "note to a mapped key.";
+#ifndef TUNINGS_NO_EXCEPTIONS
                     throw TuningError(s);
+#else
+										tuning_error = s;
+										return;
+#endif
                 }
             }
             scalepositiontable[i] = scalePositionOfTuningNote % s.count;
@@ -709,9 +814,16 @@ inline Tuning::Tuning(const Scale &s_, const KeyboardMapping &k_, bool allowTuni
                 {
                     if (cm > s.count)
                     {
+#ifndef TUNINGS_NO_EXCEPTIONS
                         throw TuningError(std::string(
                             "Mapping KBM note longer than scale; key=" + std::to_string(cm) +
                             " scale count=" + std::to_string(s.count)));
+#else
+											tuning_error =
+												"Mapping KBM note longer than scale; key=" + std::to_string(cm) +
+												" scale count=" + std::to_string(s.count);
+											return;
+#endif
                     }
                     push = mappingKey - cm;
                 }

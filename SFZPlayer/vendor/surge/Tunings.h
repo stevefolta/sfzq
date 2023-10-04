@@ -121,6 +121,7 @@ struct KeyboardMapping
     KeyboardMapping();
 };
 
+#ifndef TUNINGS_NO_EXCEPTIONS
 /**
  * In some failure states, the tuning library will throw an exception of
  * type TuningError with a descriptive message.
@@ -134,6 +135,9 @@ class TuningError : public std::exception
   private:
     std::string whatv;
 };
+#else
+extern std::string tuning_error;
+#endif 	// !TUNINGS_NO_EXCEPTIONS
 
 /**
  * readSCLStream returns a Scale from the SCL input stream

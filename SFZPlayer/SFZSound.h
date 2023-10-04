@@ -24,6 +24,8 @@ class SFZSound {
 
 		SFZRegion* get_region_for(
 			int note, int velocity, float rand_val, SFZRegion::Trigger trigger = SFZRegion::attack);
+		bool has_region_for(int note, SFZRegion::Trigger trigger = SFZRegion::attack);
+		int group_for(int note, SFZRegion::Trigger trigger = SFZRegion::attack);
 		int num_regions() { return regions.size(); }
 		SFZRegion* region_at(int index) { return regions[index]; }
 

@@ -105,6 +105,28 @@ SFZRegion* SFZSound::get_region_for(
 	return nullptr;
 }
 
+bool SFZSound::has_region_for(int note, SFZRegion::Trigger trigger)
+{
+	int num_regions = regions.size();
+	for (int i = 0; i < num_regions; ++i) {
+		SFZRegion* region = regions[i];
+		if (region->ever_matches(note, trigger))
+			return true;
+		}
+	return false;
+}
+
+int SFZSound::group_for(int note, SFZRegion::Trigger trigger)
+{
+	int num_regions = regions.size();
+	for (int i = 0; i < num_regions; ++i) {
+		SFZRegion* region = regions[i];
+		if (region->ever_matches(note, trigger))
+			return region->group;
+		}
+	return 0;
+}
+
 
 std::string SFZSound::get_errors_string()
 {

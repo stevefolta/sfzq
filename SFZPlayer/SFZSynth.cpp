@@ -42,7 +42,7 @@ bool SFZSynth::note_is_active(int note)
 {
 	if (tuning)
 		note = note_for_frequency(tuning->frequencyForMidiNote(note));
-	return sound && sound->get_region_for(note, 64, 0.5) != nullptr;
+	return sound && sound->has_region_for(note);
 }
 
 
@@ -56,11 +56,8 @@ void SFZSynth::note_on(int note, double velocity, int channel, int note_id)
 
 	// First, stop any currently-playing sounds in the group.
 	int group = 0;
-	if (sound) {
-		SFZRegion* region = sound->get_region_for(adjusted_note, midi_velocity, rand_val);
-		if (region)
-			group = region->group;
-		}
+	if (sound)
+		group = sound->group_for(adjusted_note);
 	if (group != 0) {
 		for (auto voice: voices) {
 			if (voice->get_off_by() == group)

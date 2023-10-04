@@ -124,6 +124,10 @@ static const std::map<std::string_view, OpcodeSetter> opcode_setters = {
 		region->lorand = std::stof(value); } },
 	{ "hirand", [](SFZRegion* region, const std::string& value) {
 		region->hirand = std::stof(value); } },
+	{ "seq_position", [](SFZRegion* region, const std::string& value) {
+		region->seq_position = std::stoi(value); } },
+	{ "seq_length", [](SFZRegion* region, const std::string& value) {
+		region->seq_length = std::stoi(value); } },
 	};
 
 void SFZReader::read(const char* text, unsigned int length)

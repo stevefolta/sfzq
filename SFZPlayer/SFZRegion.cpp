@@ -47,6 +47,8 @@ void SFZRegion::clear()
 	amp_veltrack = 100.0;
 	ampeg.clear();
 	ampeg_veltrack.clear_mod();
+	seq_position = seq_length = 1;
+	cur_seq_position = 1;
 }
 
 

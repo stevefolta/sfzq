@@ -34,12 +34,25 @@ class SFZRegion {
 		void dump();
 
 		bool matches(unsigned char note, unsigned char velocity, Trigger trigger, float rand_val) {
-			return
+			bool ok =
 				note >= lokey && note <= hikey &&
 				velocity >= lovel && velocity <= hivel &&
 				(trigger == this->trigger ||
 				 (this->trigger == attack && (trigger == first || trigger == legato))) &&
 				rand_val >= lorand && rand_val < hirand;
+			if (!ok)
+				return false;
+			ok = (cur_seq_position == seq_position);
+			cur_seq_position += 1; 
+			if (cur_seq_position > seq_length)
+				cur_seq_position = 1;
+			return ok;
+			}
+		bool ever_matches(unsigned char note, Trigger trigger) {
+			return
+				note >= lokey && note <= hikey &&
+				(trigger == this->trigger ||
+				 (this->trigger == attack && (trigger == first || trigger == legato)));
 			}
 
 		SFZSample* sample;
@@ -47,6 +60,7 @@ class SFZRegion {
 		unsigned char lovel, hivel;
 		Trigger trigger;
 		float lorand = 0.0, hirand = 1.0;
+		int seq_position = 1, seq_length = 1;
 		unsigned long group, off_by;
 		OffMode off_mode;
 
@@ -59,6 +73,7 @@ class SFZRegion {
 		int tune;
 		int pitch_keycenter, pitch_keytrack;
 		int bend_up, bend_down;
+		int cur_seq_position = 1;
 
 		float volume, pan;
 		float amp_veltrack;

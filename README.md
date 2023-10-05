@@ -3,6 +3,9 @@ SFZQ
 
 SFZQ is a CLAP plugin for Linux that plays sample-based instruments in SFZ and SF2 formats.
 
+![Image](sfzq-screenshot.png)
+
+
 ### Dependencies
 
 Requires Cairo.
@@ -53,3 +56,16 @@ up to choose a tuning, it will start in this directory.
 
 Alternate ("microtonal") tunings are supported in the Scala (".scl") file format (thanks to the 
 [Surge Tuning Library](https://surge-synth-team.org/tuning-library/)).
+
+
+# For Programmers
+
+SFZQ is built on three independent components, each of which could be extracted
+and used in other projects:
+
+SFZPlayer: reads and plays SFZ and SF2 files  
+CLAPFramework: a simple framework for CLAP plugins  
+CairoWidgets: a widget library using Cairo to draw
+
+
+

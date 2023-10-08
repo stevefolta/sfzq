@@ -24,9 +24,9 @@ WIDGET_SOURCES += TimeSeconds.cpp
 SOURCES += $(foreach source,$(WIDGET_SOURCES),$(WIDGETS_DIR)/$(source))
 LIBRARIES += X11 cairo
 SUBDIRS += $(SFZ_DIR) $(FRAMEWORK_DIR) $(WIDGETS_DIR) $(SFZ_DIR)/vendor/surge
-CFLAGS += --no-exceptions --no-rtti -DTUNINGS_NO_EXCEPTIONS
-
 OBJECTS_DIR := objects
+
+CFLAGS += -fPIC --no-exceptions --no-rtti -DTUNINGS_NO_EXCEPTIONS
 CFLAGS += -Wall
 LINK_FLAGS += -shared
 

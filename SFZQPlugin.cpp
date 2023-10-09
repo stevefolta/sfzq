@@ -228,6 +228,16 @@ clap_process_status SFZQPlugin::process(const clap_process_t* process)
 
 	// Setup rendering.
 	CLAPOutBuffer out_buffer(&process->audio_outputs[0]);
+	for (uint32_t channel = 0; channel < out_buffer.num_channels(); ++channel) {
+		auto samples_32 = out_buffer.samples_for_channel_32(channel);
+		if (samples_32)
+			memset(samples_32, 0, num_frames * sizeof(float));
+		else {
+			auto samples_64 = out_buffer.samples_for_channel_64(channel);
+			if (samples_64)
+				memset(samples_64, 0, num_frames * sizeof(double));
+			}
+		}
 
 	// Render and handle events.
 	for (uint32_t cur_frame = 0; cur_frame < num_frames; ) {

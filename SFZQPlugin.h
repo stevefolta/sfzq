@@ -21,6 +21,7 @@ class Checkbox;
 class SFZQPlugin : public CLAPPlugin {
 	public:
 		SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_host_t* host);
+		bool init();
 		~SFZQPlugin();
 
 		uint32_t num_note_ports(bool is_input);
@@ -88,7 +89,11 @@ class SFZQPlugin : public CLAPPlugin {
 				CairoGUI(SFZQPlugin* plugin_in)
 					: plugin(plugin_in) {}
 
-				cairo_t* cairo() { return plugin->cairo_gui_extension->cairo; }
+				cairo_t* cairo() {
+					if (plugin->cairo_gui_extension == nullptr)
+						return nullptr;
+					return plugin->cairo_gui_extension->cairo;
+					}
 				void refresh() { plugin->cairo_gui_extension->refresh(); }
 
 				SFZQPlugin* plugin;

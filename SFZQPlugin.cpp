@@ -43,13 +43,6 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	main_to_audio_queue(20), audio_to_main_queue(20), load_to_main_queue(100),
 	cairo_gui(this)
 {
-	posix_fd_extension = new CLAPPosixFDExtension(this);
-	cairo_gui_extension = new CLAPCairoGUIExtension(this);
-	audio_ports_extension = new CLAPAudioPortsExtension(this);
-	note_ports_extension = new CLAPNotePortsExtension(this);
-	params_extension = new CLAPParamsExtension();
-	state_extension = new CLAPStateExtension(this);
-
 	settings.read_settings_files();
 
 	synth = new SFZSynth(settings.num_voices);
@@ -70,6 +63,18 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 		voices_used_label->font_weight = CAIRO_FONT_WEIGHT_NORMAL;
 		}
 	layout();
+}
+
+bool SFZQPlugin::init()
+{
+	posix_fd_extension = new CLAPPosixFDExtension(this);
+	cairo_gui_extension = new CLAPCairoGUIExtension(this);
+	audio_ports_extension = new CLAPAudioPortsExtension(this);
+	note_ports_extension = new CLAPNotePortsExtension(this);
+	params_extension = new CLAPParamsExtension();
+	state_extension = new CLAPStateExtension(this);
+
+	return true;
 }
 
 SFZQPlugin::~SFZQPlugin()

@@ -10,14 +10,16 @@ static const int more_increment = 10;
 SubsoundWidget::SubsoundWidget(CairoGUI* gui_in, SFZSound* sound_in, Rect rect_in)
 	: Widget(gui_in, rect_in), sound(sound_in)
 {
-	minus_button = new Button(gui, "\u2B05");
-	plus_button = new Button(gui, "\u27A1");
+	minus_button = new Button(gui, "\u25C0");
+	plus_button = new Button(gui, "\u25B6");
+	minus_button->label_size = plus_button->label_size = 0.65;
 	name_label = new Label(gui, "");
 	name_label->font_weight = CAIRO_FONT_WEIGHT_NORMAL;
 	if (sound->num_subsounds() > more_increment) {
 		// Would use REW/FF (\u23E4 and \u23E9), but they seem rarer.
 		minus_more_button = new Button(gui, "\u25C0\u25C0");
 		plus_more_button = new Button(gui, "\u25B6\u25B6");
+		minus_more_button->label_size = plus_more_button->label_size = 0.65;
 		}
 	update();
 	if (rect.width > 0)

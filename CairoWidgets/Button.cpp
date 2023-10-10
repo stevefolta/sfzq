@@ -2,9 +2,6 @@
 #include "CairoGUI.h"
 #include <iostream>
 
-static const double label_size = 0.6;
-static const double corner_size = 8.0;
-
 
 void Button::paint()
 {

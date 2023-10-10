@@ -26,6 +26,9 @@ class Button : public Widget {
 		bool mouse_released(int x, int y);
 		void mouse_moved(int x, int y);
 
+		double label_size = 0.6;
+		double corner_size = 8.0;
+
 	protected:
 		const char* label;
 		bool pressed = false, is_mouse_over = false;

@@ -81,6 +81,9 @@ edit-all:
 	@ $(EDITOR) $(filter-out sfzq.h,$(foreach source,$(SOURCES),$(source:.cpp=.h) $(source)))
 
 .PHONY: validate
-validate:
+validate: $(PLUGIN)
 	$(QUIET) clap-validator validate --only-failed --no-parallel $(PLUGIN)
+.PHONY: test
+test: $(PLUGIN)
+	$(QUIET) clap-host -p ./$(PLUGIN)
 

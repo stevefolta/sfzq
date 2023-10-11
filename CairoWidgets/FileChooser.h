@@ -16,6 +16,7 @@ class FileChooser : public Widget {
 		~FileChooser();
 
 		void set_path(std::string new_path);
+		void go_to_cwd();
 		void set_file_filter(std::function<bool(const char*)> new_file_filter);
 
 		void set_ok_fn(std::function<void(std::string path)> fn) { ok_fn = fn; }

@@ -14,9 +14,7 @@ FileChooser::FileChooser(CairoGUI* gui, Rect rect)
 	: Widget(gui, rect)
 {
 	Rect temp_rect = {};
-	path = cwd();
 	file_list = new FileList(gui, temp_rect);
-	file_list->set_dir(path);
 	up_button = new Button(gui, temp_rect, "\u2B06");
 	Rect button_rect = { 0, 0, button_width, button_height };
 	ok_button = new Button(gui, button_rect, "OK");
@@ -39,6 +37,11 @@ void FileChooser::set_path(std::string new_path)
 	path = new_path;
 	file_list->set_dir(new_path);
 	up_button->enabled = (path != "/");
+}
+
+void FileChooser::go_to_cwd()
+{
+	set_path(cwd());
 }
 
 void FileChooser::set_file_filter(std::function<bool(const char*)> new_file_filter)
@@ -68,6 +71,11 @@ void FileChooser::set_button_font(const char* font, cairo_font_weight_t weight)
 
 void FileChooser::paint()
 {
+	// Default to the current working directory... but defer that until now, to
+	// give the owner a change to set things up.
+	if (path.empty())
+		go_to_cwd();
+
 	draw_path();
 	file_list->paint();
 	up_button->paint();

@@ -687,16 +687,18 @@ void SFZQPlugin::open_file_chooser()
 		return;
 
 	file_chooser = new FileChooser(&cairo_gui, {});
-	if (!settings.samples_directory.empty())
-		file_chooser->set_path(settings.samples_directory);
 	file_chooser->set_file_filter([](const char* filename_in) {
 		std::string_view filename(filename_in);
 		auto dot_pos = filename.rfind('.');
 		if (dot_pos == std::string_view::npos)
 			return false;
 		auto extension = filename.substr(dot_pos + 1);
-		return extension == "sfz" || extension == "SFZ";
+		return
+			extension == "sfz" || extension == "SFZ" ||
+			extension == "sf2" || extension == "SF2";
 		});
+	if (!settings.samples_directory.empty())
+		file_chooser->set_path(settings.samples_directory);
 	file_chooser->set_ok_fn([&](std::string path) { file_chosen(path); });
 	file_chooser->set_cancel_fn([&]() { file_choice_canceled(); });
 	layout();

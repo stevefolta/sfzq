@@ -155,6 +155,19 @@ std::string SettingsParser::unquote_string(std::string_view token)
 }
 
 
+std::string SettingsParser::quote_string(std::string_view str)
+{
+	std::stringstream result;
+	for (auto p = str.begin(); p < str.end(); ++p) {
+		char c = *p;
+		if (c == '"' || c == '\\')
+			result << '\\';
+		result << c;
+		}
+	return result.str();
+}
+
+
 uint32_t SettingsParser::parse_uint32(std::string_view token)
 {
 	char* end_ptr = nullptr;

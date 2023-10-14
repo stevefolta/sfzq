@@ -18,11 +18,14 @@
 #include "CLAPStateExtension.h"
 #include "CLAPStream.h"
 #include "CLAPOutBuffer.h"
+#include "SettingsParser.h"
 #include "Messages.h"
 #include "Settings.h"
 #include "Tunings.h"
 #include <thread>
 #include <string_view>
+#include <sstream>
+#include <vector>
 #include <iostream>
 
 static const double filename_label_height = 24.0;
@@ -526,28 +529,83 @@ bool SFZQPlugin::save_state(const clap_ostream_t* clap_stream)
 
 bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 {
-	CLAPInStream stream(clap_stream);
-	int version = stream.read_uint32();
-	if (!stream.ok || version != 1)
+	std::vector<char> buffer(512);
+
+	// Read first four bytes, to see if it's the old-style state.
+	int64_t bytes_read = clap_stream->read(clap_stream, buffer.data(), sizeof(uint32_t));
+	if (bytes_read < (int64_t) sizeof(uint32_t))
 		return false;
-	auto path = stream.read_string();
-	if (!stream.ok)
-		return false;
+
+	// Old-style state.
+	if (buffer[0] == 0 && buffer[1] == 0 && buffer[2] == 0 && buffer[3] == 1) {
+		CLAPInStream stream(clap_stream);
+		auto path = stream.read_string();
+		if (!stream.ok)
+			return false;
+		int subsound = 0;
+		int read_subsound = stream.read_uint32();
+		if (stream.ok)
+			subsound = read_subsound;
+		if (!path.empty()) {
+			initial_load = true;
+			load_sound(path, subsound);
+			}
+		if (stream.ok) {
+			tuning_enabled = stream.read_uint32() != 0;
+			tuning_checkbox->checked = tuning_enabled;
+			tuning_path = stream.read_string();
+			if (!tuning_path.empty() && tuning_enabled)
+				load_tuning(tuning_path);
+			}
+		return true;
+		}
+
+	// New-style state.
+
+	// Read the whole state.
+	std::ostringstream contents;
+	contents.write(buffer.data(), sizeof(uint32_t));
+	while (true) {
+		int64_t bytes_read = clap_stream->read(clap_stream, buffer.data(), buffer.size());
+		if (bytes_read < 0)
+			return false;
+		else if (bytes_read == 0)
+			break;
+		contents.write(buffer.data(), bytes_read);
+		}
+
+	// Parse it.
+	auto contents_str = contents.str();
+	std::string path;
 	int subsound = 0;
-	int read_subsound = stream.read_uint32();
-	if (stream.ok)
-		subsound = read_subsound;
+	bool ok = true;
+	SettingsParser parser(
+		contents_str.data(), contents_str.size(),
+		[&](std::string_view setting_name, std::string_view value_token) {
+			if (setting_name == "sound")
+				path = SettingsParser::unquote_string(value_token, &ok);
+			else if (setting_name == "subsound")
+				subsound = SettingsParser::parse_uint32(value_token, &ok);
+			else if (setting_name == "tuning-enabled")
+				tuning_enabled = SettingsParser::parse_bool(value_token, &ok);
+			else if (setting_name == "tuning-path")
+				tuning_path = SettingsParser::unquote_string(value_token, &ok);
+			else {
+				// Just ignore unknown (future) values.
+				}
+			});
+	parser.parse();
+	if (!ok)
+		return false;
+
+	// Load it.
 	if (!path.empty()) {
 		initial_load = true;
 		load_sound(path, subsound);
 		}
-	if (stream.ok) {
-		tuning_enabled = stream.read_uint32() != 0;
-		tuning_checkbox->checked = tuning_enabled;
-		tuning_path = stream.read_string();
-		if (!tuning_path.empty() && tuning_enabled)
-			load_tuning(tuning_path);
-		}
+	if (!tuning_path.empty() && tuning_enabled)
+		load_tuning(tuning_path);
+
 	return true;
 }
 

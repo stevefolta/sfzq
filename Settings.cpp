@@ -35,26 +35,32 @@ void Settings::read_settings_files()
 }
 
 
-static const SettingsParser::HandlerMap handlers = {
-	{ "samples-directory", [](std::string_view value_token, SettingsParser* parser) {
-		settings.samples_directory = parser->unquote_string(value_token);
+static void set_setting(std::string_view setting_name, std::string_view value_token, SettingsParser* parser)
+{
+	bool ok = true;
+	if (setting_name == "samples-directory") {
+		settings.samples_directory = SettingsParser::unquote_string(value_token);
 		if (!settings.samples_directory.empty() && settings.samples_directory[0] == '~')
 			settings.samples_directory = Settings::home_path() + settings.samples_directory.substr(1);
-		} },
-	{ "tunings-directory", [](std::string_view value_token, SettingsParser* parser) {
-		settings.tunings_directory = parser->unquote_string(value_token);
+		}
+	else if (setting_name == "tunings-directory") {
+		settings.tunings_directory = SettingsParser::unquote_string(value_token);
 		if (!settings.tunings_directory.empty() && settings.tunings_directory[0] == '~')
 			settings.tunings_directory = Settings::home_path() + settings.tunings_directory.substr(1);
-		} },
-	{ "num-voices", [](std::string_view value_token, SettingsParser* parser) {
-		auto value = parser->parse_uint32(value_token);
-		if (value >= 0)
+		}
+	else if (setting_name == "num-voices") {
+		auto value = SettingsParser::parse_uint32(value_token, &ok);
+		if (value > 0)
 			settings.num_voices = value;
-		} },
-	{ "show-voices-used", [](std::string_view value_token, SettingsParser* parser) {
-		settings.show_voices_used = parser->parse_bool(value_token);
-		} },
-	};
+		}
+	else if (setting_name == "show-voices-used")
+		settings.show_voices_used = SettingsParser::parse_bool(value_token, &ok);
+	else
+		parser->errors << "Unknown setting: " << setting_name << "." << std::endl;
+
+	if (!ok)
+		parser->errors << "Settings: bad value for \"" << setting_name << "\"";
+}
 
 void Settings::read_settings_file(std::string path)
 {
@@ -67,7 +73,11 @@ void Settings::read_settings_file(std::string path)
 	std::string contents(
 		(std::istreambuf_iterator<char>(file)),
 		std::istreambuf_iterator<char>());
-	SettingsParser parser(contents.data(), contents.size(), handlers);
+	SettingsParser parser(
+		contents.data(), contents.size(),
+		[&](std::string_view setting_name, std::string_view value_token) {
+			set_setting(setting_name, value_token, &parser);
+			});
 	parser.parse();
 
 	settings.errors += parser.errors.str();

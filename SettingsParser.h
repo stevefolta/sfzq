@@ -8,25 +8,25 @@
 
 class SettingsParser {
 	public:
-		typedef std::map<std::string_view, std::function<void(std::string_view token, SettingsParser* parser)> > HandlerMap;
+		typedef std::function<void(std::string_view setting, std::string_view value_token)> SettingHandler;
 
-		SettingsParser(const char* text, int length, const HandlerMap& handlers_in)
-			: p(text), end(text + length), handlers(handlers_in) {}
+		SettingsParser(const char* text, int length, const SettingHandler& handler_in)
+			: p(text), end(text + length), handler(handler_in) {}
 
 		void parse();
 
-		std::string	unquote_string(std::string_view token);
+		static std::string	unquote_string(std::string_view token, bool* ok = nullptr);
 		static std::string quote_string(std::string_view str);
-		uint32_t	parse_uint32(std::string_view token);
-		float	parse_float(std::string_view token);
-		bool	parse_bool(std::string_view token);
+		static uint32_t	parse_uint32(std::string_view token, bool* ok = nullptr);
+		static float	parse_float(std::string_view token, bool* ok = nullptr);
+		static bool	parse_bool(std::string_view token, bool* ok = nullptr);
 
 		std::ostringstream errors;
 
 	protected:
 		const char*	p;
 		const char*	end;
-		const HandlerMap& handlers;
+		const SettingHandler& handler;
 
 		std::string_view	next_token();
 		bool	is_identifier(std::string_view token) { return isalpha(token[0]); }

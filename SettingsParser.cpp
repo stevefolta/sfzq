@@ -14,7 +14,6 @@ void SettingsParser::parse()
 
 		// Settings have the form "<name> = <value>".
 		if (!is_identifier(token)) {
-			std::stringstream message;
 			errors << "Error in settings file: not a setting name: \"" << token << '"' << std::endl;
 			return;
 			}
@@ -30,9 +29,7 @@ void SettingsParser::parse()
 			}
 
 		// Set the setting.
-		const auto &it = handlers.find(setting_name);
-		if (it != handlers.end())
-			it->second(value_token, this);
+		handler(setting_name, value_token);
 		}
 }
 
@@ -138,7 +135,7 @@ std::string_view SettingsParser::next_token()
 }
 
 
-std::string SettingsParser::unquote_string(std::string_view token)
+std::string SettingsParser::unquote_string(std::string_view token, bool* ok)
 {
 	if (token.empty() || (token[0] != '"' && token[0] != '\''))
 		return "";
@@ -158,47 +155,52 @@ std::string SettingsParser::unquote_string(std::string_view token)
 std::string SettingsParser::quote_string(std::string_view str)
 {
 	std::stringstream result;
+	result << '"';
 	for (auto p = str.begin(); p < str.end(); ++p) {
 		char c = *p;
 		if (c == '"' || c == '\\')
 			result << '\\';
 		result << c;
 		}
+	result << '"';
 	return result.str();
 }
 
 
-uint32_t SettingsParser::parse_uint32(std::string_view token)
+uint32_t SettingsParser::parse_uint32(std::string_view token, bool* ok)
 {
 	char* end_ptr = nullptr;
 	uint32_t result = strtoul(std::string(token).c_str(), &end_ptr, 0);
 	if (*end_ptr != 0) {
-		errors << "Error in settings file: not a number: " << token << std::endl;
 		result = 0;
+		if (ok)
+			*ok = false;
 		}
 	return result;
 }
 
 
-float SettingsParser::parse_float(std::string_view token)
+float SettingsParser::parse_float(std::string_view token, bool* ok)
 {
 	char* end_ptr = nullptr;
 	float result = strtof(std::string(token).c_str(), &end_ptr);
 	if (*end_ptr != 0) {
 		result = 0.0;
-		errors << "Error in settings file: not a floating-point number: " << token << std::endl;
+		if (ok)
+			*ok = false;
 		}
 	return result;
 }
 
 
-bool SettingsParser::parse_bool(std::string_view token)
+bool SettingsParser::parse_bool(std::string_view token, bool* ok)
 {
 	if (token == "true")
 		return true;
 	else if (token == "false")
 		return false;
-	errors << "Error in settings file: not a boolean: " << token << std::endl;
+	if (ok)
+		*ok = false;
 	return false;
 }
 

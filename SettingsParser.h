@@ -15,7 +15,7 @@ class SettingsParser {
 
 		void parse();
 
-		static std::string	unquote_string(std::string_view token, bool* ok = nullptr);
+		static std::string unquote_string(std::string_view token, bool* ok = nullptr);
 		static std::string quote_string(std::string_view str);
 		static uint32_t	parse_uint32(std::string_view token, bool* ok = nullptr);
 		static float	parse_float(std::string_view token, bool* ok = nullptr);

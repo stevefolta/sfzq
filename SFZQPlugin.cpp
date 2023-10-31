@@ -394,8 +394,11 @@ void SFZQPlugin::mouse_released(int32_t x, int32_t y, int button)
 				tuning_label->color = { 0.0, 0.0, 0.0 };
 				if (tuning_path.empty())
 					open_file_chooser_for_tuning();
-				else
+				else {
+					tuning_enabled = true;
+					state_extension->host_mark_dirty();
 					load_tuning(tuning_path);
+					}
 				}
 			else {
 				main_to_audio_queue.send(UseTuning, nullptr);
@@ -625,8 +628,16 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 		initial_load = true;
 		load_sound(path, subsound);
 		}
-	if (!tuning_path.empty() && tuning_enabled)
-		load_tuning(tuning_path);
+	if (!tuning_path.empty()) {
+		if (tuning_enabled)
+			load_tuning(tuning_path);
+		else {
+			tuning_checkbox->text = "Tuning: ";
+			tuning_checkbox->text_color = { 0.0, 0.0, 0.0 };
+			tuning_label->label = tuning_path.substr(tuning_path.find_last_of('/') + 1);
+			}
+		}
+	tuning_checkbox->checked = tuning_enabled;
 
 	return true;
 }
@@ -831,7 +842,7 @@ void SFZQPlugin::tuning_file_chosen(std::string path)
 	tuning_path = path;
 	if (!had_tuning) {
 		tuning_enabled = true;
-		tuning_checkbox->enabled = tuning_enabled;
+		tuning_checkbox->checked = tuning_enabled;
 		}
 	state_extension->host_mark_dirty();
 }
@@ -842,7 +853,7 @@ void SFZQPlugin::tuning_file_choice_canceled()
 	file_chooser = nullptr;
 	tracking_widget = nullptr;
 	if (!tuning_enabled)
-		tuning_checkbox->enabled = false;
+		tuning_checkbox->checked = false;
 }
 
 

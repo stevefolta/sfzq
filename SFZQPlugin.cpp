@@ -602,8 +602,8 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 	std::string path;
 	int subsound = 0;
 	bool ok = true;
-	SettingsParser parser(
-		contents_str.data(), contents_str.size(),
+	SettingsParser parser(contents_str.data(), contents_str.size());
+	parser.parse(
 		[&](std::string_view setting_name, std::string_view value_token) {
 			if (setting_name == "sound")
 				path = SettingsParser::unquote_string(value_token, &ok);
@@ -617,7 +617,6 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 				// Just ignore unknown (future) values.
 				}
 			});
-	parser.parse();
 	if (!ok)
 		return false;
 

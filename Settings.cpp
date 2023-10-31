@@ -73,12 +73,11 @@ void Settings::read_settings_file(std::string path)
 	std::string contents(
 		(std::istreambuf_iterator<char>(file)),
 		std::istreambuf_iterator<char>());
-	SettingsParser parser(
-		contents.data(), contents.size(),
+	SettingsParser parser(contents.data(), contents.size());
+	parser.parse(
 		[&](std::string_view setting_name, std::string_view value_token) {
 			set_setting(setting_name, value_token, &parser);
 			});
-	parser.parse();
 
 	settings.errors += parser.errors.str();
 }

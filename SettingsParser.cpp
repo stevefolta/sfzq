@@ -1,7 +1,7 @@
 #include "SettingsParser.h"
 
 
-void SettingsParser::parse()
+void SettingsParser::parse(const SettingHandler& handler)
 {
 	while (true) {
 		std::string_view token = next_token();

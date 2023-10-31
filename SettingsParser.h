@@ -10,10 +10,10 @@ class SettingsParser {
 	public:
 		typedef std::function<void(std::string_view setting, std::string_view value_token)> SettingHandler;
 
-		SettingsParser(const char* text, int length, const SettingHandler& handler_in)
-			: p(text), end(text + length), handler(handler_in) {}
+		SettingsParser(const char* text, int length)
+			: p(text), end(text + length) {}
 
-		void parse();
+		void parse(const SettingHandler& handler);
 
 		static std::string unquote_string(std::string_view token, bool* ok = nullptr);
 		static std::string quote_string(std::string_view str);
@@ -26,7 +26,6 @@ class SettingsParser {
 	protected:
 		const char*	p;
 		const char*	end;
-		const SettingHandler& handler;
 
 		std::string_view	next_token();
 		bool	is_identifier(std::string_view token) { return isalpha(token[0]); }

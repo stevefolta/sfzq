@@ -518,6 +518,28 @@ void SFZQPlugin::main_thread_tick()
 
 bool SFZQPlugin::save_state(const clap_ostream_t* clap_stream)
 {
+	// Create the textual state.
+	std::ostringstream out;
+	out << "sound = " << SettingsParser::quote_string(sound_path) << std::endl;
+	out << "subsound = " << sound_subsound << std::endl;
+	out << "tuning-enabled = " << (tuning_enabled ? "true" : "false") << std::endl;
+	out << "tuning-path = " << SettingsParser::quote_string(tuning_path) << std::endl;
+
+	// Write it to the clap_stream.
+	auto state_str = out.str();
+	std::string_view remainder = state_str;
+	while (!remainder.empty()) {
+		auto bytes_written = clap_stream->write(clap_stream, remainder.data(), remainder.size());
+		if (bytes_written < 0)
+			return false;
+		if (bytes_written >= (int64_t) remainder.size())
+			break;
+		remainder = remainder.substr(bytes_written);
+		}
+	return true;
+
+	// This is the old binary state saving code:
+#ifdef NOT_ANYMORE
 	CLAPOutStream stream(clap_stream);
 	stream.write_uint32(1); 	// Version.
 	stream.write_string(sound_path);
@@ -525,6 +547,7 @@ bool SFZQPlugin::save_state(const clap_ostream_t* clap_stream)
 	stream.write_uint32(tuning_enabled);
 	stream.write_string(tuning_path);
 	return stream.ok;
+#endif
 }
 
 bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)

@@ -13,6 +13,7 @@ static const std::vector<clap_plugin_descriptor_t> our_descriptors = {
 			CLAP_PLUGIN_FEATURE_INSTRUMENT,
 			CLAP_PLUGIN_FEATURE_SAMPLER,
 			CLAP_PLUGIN_FEATURE_STEREO,
+			nullptr,
 			},
 		},
 	};

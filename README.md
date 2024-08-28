@@ -58,6 +58,11 @@ Alternate ("microtonal") tunings are supported in the Scala (".scl") file format
 [Surge Tuning Library](https://surge-synth-team.org/tuning-library/)).
 
 
+### Building
+
+At build time, you will need the headers for CLAP, Cairo, and X11.  If your distro's package manager doesn't have a package for the CLAP headers (and you're not using Nix), you can [get the headers](https://github.com/free-audio/clap), and tell the Makefile where to find them by creating a "Makefile.local" file with a line like `CFLAGS += -I/path/to/clap/include`.  Other than that, you should be able to build it just by typing `make`.
+
+
 # For Programmers
 
 SFZQ is built on three independent components, each of which could be extracted

@@ -48,6 +48,11 @@ static void set_setting(std::string_view setting_name, std::string_view value_to
 		if (!settings.tunings_directory.empty() && settings.tunings_directory[0] == '~')
 			settings.tunings_directory = Settings::home_path() + settings.tunings_directory.substr(1);
 		}
+	else if (setting_name == "keyboard-mappings-directory") {
+		settings.keyboard_mappings_directory = SettingsParser::unquote_string(value_token);
+		if (!settings.keyboard_mappings_directory.empty() && settings.keyboard_mappings_directory[0] == '~')
+			settings.keyboard_mappings_directory = Settings::home_path() + settings.keyboard_mappings_directory.substr(1);
+		}
 	else if (setting_name == "num-voices") {
 		auto value = SettingsParser::parse_uint32(value_token, &ok);
 		if (value > 0)

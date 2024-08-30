@@ -19,3 +19,19 @@ void Label::paint()
 }
 
 
+double Label::drawn_width()
+{
+	auto cairo = gui->cairo();
+	cairo_save(cairo);
+
+	cairo_select_font_face(cairo, (font ? font : gui->default_font()), CAIRO_FONT_SLANT_NORMAL, font_weight);
+	cairo_set_font_size(cairo, rect.height);
+	cairo_text_extents_t text_extents;
+	cairo_text_extents(cairo, label.c_str(), &text_extents);
+
+	cairo_restore(cairo);
+
+	return text_extents.x_advance;
+}
+
+

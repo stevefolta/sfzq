@@ -55,11 +55,10 @@ SFZQPlugin::SFZQPlugin(const clap_plugin_descriptor_t* descriptor, const clap_ho
 	filename_label->color = { 0.5, 0.5, 0.5 };
 	error_box = new TextBox(&cairo_gui);
 	error_box->text = settings.errors;
-	tuning_checkbox = new Checkbox(&cairo_gui, "Tuning...");
-	tuning_checkbox->text_color = { 0.5, 0.5, 0.5 };
-	tuning_label = new Label(&cairo_gui, "");
-	tuning_label->font_weight = CAIRO_FONT_WEIGHT_NORMAL;
-	tuning_label->color = { 0.5, 0.5, 0.5 };
+	tuning.init(&cairo_gui, this, "Tuning...", "Tuning: ");
+	tuning.extensions = { "scl", "SCL" };
+	keyboard_mapping.init(&cairo_gui, this, "Keyboard mapping...", "Keymapping: ");
+	keyboard_mapping.extensions = { "kbm", "KBM" };
 	keyboard = new KeyboardWidget(&cairo_gui);
 	if (settings.show_voices_used) {
 		voices_used_label = new Label(&cairo_gui, "Voices used:");
@@ -87,8 +86,6 @@ SFZQPlugin::~SFZQPlugin()
 	delete subsound_widget;
 	delete error_box;
 	delete voices_used_label;
-	delete tuning_checkbox;
-	delete tuning_label;
 	delete keyboard;
 	delete file_chooser;
 
@@ -335,8 +332,9 @@ void SFZQPlugin::paint_gui()
 	if (voices_used_label)
 		voices_used_label->paint();
 	error_box->paint();
-	tuning_checkbox->paint();
-	tuning_label->paint();
+	tuning.paint();
+	if (tuning.enabled)
+		keyboard_mapping.paint();
 	keyboard->paint();
 
 	if (file_chooser) {
@@ -374,10 +372,10 @@ void SFZQPlugin::mouse_pressed(int32_t x, int32_t y, int button)
 		open_file_chooser();
 	else if (subsound_widget && subsound_widget->contains(x, y))
 		tracking_widget = subsound_widget;
-	else if (tuning_checkbox->contains(x, y))
-		tracking_widget = tuning_checkbox;
-	else if (tuning_label->contains(x, y))
-		open_file_chooser_for_tuning();
+	else if (tuning.contains(x, y))
+		tracking_widget = &tuning;
+	else if (keyboard_mapping.contains(x, y))
+		tracking_widget = &keyboard_mapping;
 	if (tracking_widget)
 		tracking_widget->mouse_pressed(x, y);
 	cairo_gui_extension->refresh();
@@ -389,23 +387,8 @@ void SFZQPlugin::mouse_released(int32_t x, int32_t y, int button)
 		return;
 
 	if (tracking_widget && tracking_widget->mouse_released(x, y)) {
-		if (tracking_widget == tuning_checkbox) {
-			if (tuning_checkbox->checked) {
-				tuning_label->color = { 0.0, 0.0, 0.0 };
-				if (tuning_path.empty())
-					open_file_chooser_for_tuning();
-				else {
-					tuning_enabled = true;
-					state_extension->host_mark_dirty();
-					load_tuning(tuning_path);
-					}
-				}
-			else {
-				main_to_audio_queue.send(UseTuning, nullptr);
-				tuning_enabled = false;
-				state_extension->host_mark_dirty();
-				}
-			}
+		// The TuningFiles already handle acceptance in their own mouse_released()
+		// functions.
 		}
 	tracking_widget = nullptr;
 	cairo_gui_extension->refresh();
@@ -525,8 +508,10 @@ bool SFZQPlugin::save_state(const clap_ostream_t* clap_stream)
 	std::ostringstream out;
 	out << "sound = " << SettingsParser::quote_string(sound_path) << std::endl;
 	out << "subsound = " << sound_subsound << std::endl;
-	out << "tuning-enabled = " << (tuning_enabled ? "true" : "false") << std::endl;
-	out << "tuning-path = " << SettingsParser::quote_string(tuning_path) << std::endl;
+	out << "tuning-enabled = " << (tuning.enabled ? "true" : "false") << std::endl;
+	out << "tuning-path = " << SettingsParser::quote_string(tuning.path) << std::endl;
+	out << "keyboard-mapping-enabled = " << (keyboard_mapping.enabled ? "true" : "false") << std::endl;
+	out << "keyboard-mapping-path = " << SettingsParser::quote_string(keyboard_mapping.path) << std::endl;
 
 	// Write it to the clap_stream.
 	auto state_str = out.str();
@@ -547,8 +532,8 @@ bool SFZQPlugin::save_state(const clap_ostream_t* clap_stream)
 	stream.write_uint32(1); 	// Version.
 	stream.write_string(sound_path);
 	stream.write_uint32(sound_subsound);
-	stream.write_uint32(tuning_enabled);
-	stream.write_string(tuning_path);
+	stream.write_uint32(tuning.enabled);
+	stream.write_string(tuning.path);
 	return stream.ok;
 #endif
 }
@@ -577,11 +562,11 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 			load_sound(path, subsound);
 			}
 		if (stream.ok) {
-			tuning_enabled = stream.read_uint32() != 0;
-			tuning_checkbox->checked = tuning_enabled;
-			tuning_path = stream.read_string();
-			if (!tuning_path.empty() && tuning_enabled)
-				load_tuning(tuning_path);
+			tuning.enabled = stream.read_uint32() != 0;
+			tuning.update();
+			tuning.set_path(stream.read_string());
+			if (!tuning.path.empty() && tuning.enabled)
+				load_tuning();
 			}
 		return true;
 		}
@@ -613,9 +598,13 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 			else if (setting_name == "subsound")
 				subsound = SettingsParser::parse_uint32(value_token, &ok);
 			else if (setting_name == "tuning-enabled")
-				tuning_enabled = SettingsParser::parse_bool(value_token, &ok);
+				tuning.enabled = SettingsParser::parse_bool(value_token, &ok);
 			else if (setting_name == "tuning-path")
-				tuning_path = SettingsParser::unquote_string(value_token, &ok);
+				tuning.set_path(SettingsParser::unquote_string(value_token, &ok));
+			else if (setting_name == "keyboard-mapping-enabled")
+				keyboard_mapping.enabled = SettingsParser::parse_bool(value_token, &ok);
+			else if (setting_name == "keyboard-mapping-path")
+				keyboard_mapping.set_path(SettingsParser::unquote_string(value_token, &ok));
 			else {
 				// Just ignore unknown (future) values.
 				}
@@ -628,18 +617,78 @@ bool SFZQPlugin::load_state(const clap_istream_t* clap_stream)
 		initial_load = true;
 		load_sound(path, subsound);
 		}
-	if (!tuning_path.empty()) {
-		if (tuning_enabled)
-			load_tuning(tuning_path);
-		else {
-			tuning_checkbox->text = "Tuning: ";
-			tuning_checkbox->text_color = { 0.0, 0.0, 0.0 };
-			tuning_label->label = tuning_path.substr(tuning_path.find_last_of('/') + 1);
-			}
-		}
-	tuning_checkbox->checked = tuning_enabled;
+	tuning.update();
+	keyboard_mapping.update();
+	if (tuning.enabled)
+		load_tuning();
 
 	return true;
+}
+
+
+void SFZQPlugin::tuning_changed()
+{
+	if (!tuning.enabled)
+		main_to_audio_queue.send(UseTuning, nullptr);
+	else
+		load_tuning();
+	state_extension->host_mark_dirty();
+}
+
+void SFZQPlugin::open_tuning_file_chooser(TuningFile* tuning_file)
+{
+	if (file_chooser)
+		return;
+
+	file_chooser = new FileChooser(&cairo_gui, {});
+	std::string initial_path;
+	if (tuning_file == &tuning)
+		initial_path = settings.tunings_directory;
+	else if (tuning_file == &keyboard_mapping)
+		initial_path = settings.keyboard_mappings_directory;
+	if (!initial_path.empty())
+		file_chooser->set_path(initial_path);
+	file_chooser->set_file_filter([&](const char* filename_in) {
+		std::string_view filename(filename_in);
+		auto dot_pos = filename.rfind('.');
+		if (dot_pos == std::string_view::npos || cur_tuning_file == nullptr)
+			return false;
+		auto extension = filename.substr(dot_pos + 1);
+		for (auto ext: cur_tuning_file->extensions) {
+			if (extension == ext)
+				return true;
+			}
+		return false;
+		});
+	file_chooser->set_ok_fn([&](std::string path) { tuning_file_chosen(path); });
+	file_chooser->set_cancel_fn([&]() { tuning_file_choice_canceled(); });
+	cur_tuning_file = tuning_file;
+	layout();
+}
+
+void SFZQPlugin::tuning_file_chosen(std::string path)
+{
+	delete file_chooser;
+	file_chooser = nullptr;
+	tracking_widget = nullptr;
+	if (cur_tuning_file) {
+		cur_tuning_file->set_path(path);
+		cur_tuning_file->enable();
+		}
+	tuning_changed();
+	cur_tuning_file = nullptr;
+}
+
+void SFZQPlugin::tuning_file_choice_canceled()
+{
+	delete file_chooser;
+	file_chooser = nullptr;
+	tracking_widget = nullptr;
+	if (cur_tuning_file) {
+		if (!cur_tuning_file->enabled)
+			cur_tuning_file->update();
+		}
+	cur_tuning_file = nullptr;
 }
 
 
@@ -737,6 +786,12 @@ void SFZQPlugin::process_midi_event(const clap_event_midi_t* event)
 
 void SFZQPlugin::layout()
 {
+	auto cairo = cairo_gui.cairo();
+	if (cairo == nullptr) {
+		// Not ready yet.
+		return;
+		}
+
 	auto contents_width = gui_width - 2 * margin;
 	filename_label->rect = { margin, margin, contents_width, filename_label_height };
 	double upper_top = margin + filename_label_height + spacing;
@@ -758,12 +813,11 @@ void SFZQPlugin::layout()
 	double lower_top = gui_height - margin - keyboard_height;
 	keyboard->rect = { margin, lower_top, contents_width, keyboard_height };
 	lower_top -= tuning_label_height + tuning_spacing;
-	double tuning_checkbox_width = tuning_checkbox->drawn_width();
-	tuning_checkbox->rect = { margin, lower_top, tuning_checkbox_width, tuning_label_height };
-	tuning_label->rect = {
-		margin + tuning_checkbox_width, lower_top,
-		contents_width - tuning_checkbox_width, tuning_label_height
-		};
+	tuning.rect = { margin, lower_top, contents_width, tuning_label_height };
+	keyboard_mapping.rect = tuning.rect;
+	tuning.layout();
+	keyboard_mapping.rect.x = tuning.rect.x + tuning.rect.width + tuning_label_height;
+	keyboard_mapping.layout();
 	error_box->rect = { margin, upper_top, contents_width, lower_top - upper_top };
 	if (file_chooser) {
 		file_chooser->rect = { margin, margin, 0, 0 };
@@ -811,54 +865,6 @@ void SFZQPlugin::file_choice_canceled()
 }
 
 
-void SFZQPlugin::open_file_chooser_for_tuning()
-{
-	if (file_chooser)
-		return;
-
-	file_chooser = new FileChooser(&cairo_gui, {});
-	if (!settings.tunings_directory.empty())
-		file_chooser->set_path(settings.tunings_directory);
-	file_chooser->set_file_filter([](const char* filename_in) {
-		std::string_view filename(filename_in);
-		auto dot_pos = filename.rfind('.');
-		if (dot_pos == std::string_view::npos)
-			return false;
-		auto extension = filename.substr(dot_pos + 1);
-		return extension == "scl" || extension == "SCL";
-		});
-	file_chooser->set_ok_fn([&](std::string path) { tuning_file_chosen(path); });
-	file_chooser->set_cancel_fn([&]() { tuning_file_choice_canceled(); });
-	layout();
-}
-
-void SFZQPlugin::tuning_file_chosen(std::string path)
-{
-	delete file_chooser;
-	file_chooser = nullptr;
-	tracking_widget = nullptr;
-	bool had_tuning = !tuning_path.empty();
-	load_tuning(path);
-	tuning_path = path;
-	if (!had_tuning) {
-		tuning_enabled = true;
-		tuning_checkbox->checked = tuning_enabled;
-		}
-	state_extension->host_mark_dirty();
-}
-
-void SFZQPlugin::tuning_file_choice_canceled()
-{
-	delete file_chooser;
-	file_chooser = nullptr;
-	tracking_widget = nullptr;
-	if (!tuning_enabled)
-		tuning_checkbox->checked = false;
-}
-
-
-
-
 void SFZQPlugin::load_sound(std::string path, int subsound)
 {
 	filename_label->label = path.substr(path.find_last_of('/') + 1);
@@ -902,26 +908,29 @@ void SFZQPlugin::load_samples()
 
 std::string Tunings::tuning_error;
 
-void SFZQPlugin::load_tuning(std::string path)
+void SFZQPlugin::load_tuning()
 {
-	tuning_label->label = path.substr(path.find_last_of('/') + 1);
-	tuning_label->color = { 0.0, 0.0, 0.0 };
-
 	Tunings::tuning_error = "";
-	auto scale = Tunings::readSCLFile(path);
+	auto scale = Tunings::readSCLFile(tuning.path);
 	if (!Tunings::tuning_error.empty()) {
 		error_box->text += std::string("\n") + Tunings::tuning_error;
 		return;
 		}
-	auto tuning = new Tunings::Tuning(scale);
+	Tunings::KeyboardMapping mapping;
+	if (keyboard_mapping.enabled) {
+		mapping = Tunings::readKBMFile(keyboard_mapping.path);
+		if (!Tunings::tuning_error.empty()) {
+			error_box->text += std::string("\n") + Tunings::tuning_error;
+			return;
+			}
+		}
+	auto tuning = new Tunings::Tuning(scale, mapping);
 	if (!Tunings::tuning_error.empty()) {
 		error_box->text += std::string("\n") + Tunings::tuning_error;
 		return;
 		}
 	main_to_audio_queue.send(UseTuning, tuning);
 
-	tuning_checkbox->text = "Tuning: ";
-	tuning_checkbox->text_color = { 0.0, 0.0, 0.0 };
 	layout();
 }
 

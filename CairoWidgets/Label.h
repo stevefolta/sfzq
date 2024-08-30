@@ -16,5 +16,7 @@ class Label : public Widget {
 		cairo_font_weight_t font_weight = CAIRO_FONT_WEIGHT_BOLD;
 
 		virtual void paint();
+
+		double drawn_width();
 	};
 

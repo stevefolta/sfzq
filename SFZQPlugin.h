@@ -1,6 +1,7 @@
 #include "CLAPPlugin.h"
 #include "CairoGUI.h"
 #include "CLAPCairoGUIExtension.h"
+#include "TuningFile.h"
 #include "MessageQueue.h"
 #include <string>
 #include <thread>
@@ -50,6 +51,10 @@ class SFZQPlugin : public CLAPPlugin {
 		bool save_state(const clap_ostream_t* stream);
 		bool load_state(const clap_istream_t* stream);
 
+		// To be called by components.
+		void tuning_changed();
+		void open_tuning_file_chooser(TuningFile* tuning_file);
+
 	protected:
 		enum {
 			default_gui_width = 500,
@@ -63,16 +68,14 @@ class SFZQPlugin : public CLAPPlugin {
 		bool initial_load = false;
 		std::thread load_samples_thread;
 		std::atomic_bool refresh_requested = false;
-		std::string tuning_path;
-		bool tuning_enabled = false;
 
 		Label* filename_label = nullptr;
 		ProgressBar* progress_bar = nullptr;;
 		FileChooser* file_chooser = nullptr;
 		SubsoundWidget* subsound_widget = nullptr;
 		TextBox* error_box = nullptr;
-		Checkbox* tuning_checkbox = nullptr;
-		Label* tuning_label = nullptr;
+		TuningFile tuning, keyboard_mapping;
+		TuningFile* cur_tuning_file = nullptr;
 		KeyboardWidget* keyboard = nullptr;
 		Label* voices_used_label = nullptr;
 		Widget* tracking_widget = nullptr;
@@ -106,12 +109,11 @@ class SFZQPlugin : public CLAPPlugin {
 		void open_file_chooser();
 		void file_chosen(std::string path);
 		void file_choice_canceled();
-		void open_file_chooser_for_tuning();
 		void tuning_file_chosen(std::string path);
 		void tuning_file_choice_canceled();
 		void load_sound(std::string path, int subsound = 0);
 		void load_samples();
-		void load_tuning(std::string path);
+		void load_tuning();
 		void send_active_keys();
 	};
 

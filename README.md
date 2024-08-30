@@ -49,6 +49,11 @@ Controls whether current number of voices used is displayed in the UI.   Set to
 Sets a default path where you keep your tunings.  When the file chooser comes
 up to choose a tuning, it will start in this directory.
 </dd>
+<dt> keyboard-mappings-directory = "<i>path</i>" </dt>
+<dd>
+Sets a default path where you keep your keyboard mappings.  When the file
+chooser comes up to choose a keyboard mapping, it will start in this directory.
+</dd>
 </dl>
 
 

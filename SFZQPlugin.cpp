@@ -387,8 +387,8 @@ void SFZQPlugin::mouse_released(int32_t x, int32_t y, int button)
 		return;
 
 	if (tracking_widget && tracking_widget->mouse_released(x, y)) {
-		// The TuningFiles already handle acceptance in their own mouse_released()
-		// functions.
+		if (tracking_widget == &tuning)
+			layout();
 		}
 	tracking_widget = nullptr;
 	cairo_gui_extension->refresh();
@@ -810,13 +810,16 @@ void SFZQPlugin::layout()
 		voices_used_label->rect = { margin, upper_top, contents_width, voices_used_label_height };
 		upper_top += voices_used_label_height + spacing;
 		}
+
 	double lower_top = gui_height - margin - keyboard_height;
 	keyboard->rect = { margin, lower_top, contents_width, keyboard_height };
 	lower_top -= tuning_label_height + tuning_spacing;
+	if (!tuning.path.empty())
+		lower_top -= tuning_label_height + tuning_spacing;
 	tuning.rect = { margin, lower_top, contents_width, tuning_label_height };
 	keyboard_mapping.rect = tuning.rect;
 	tuning.layout();
-	keyboard_mapping.rect.x = tuning.rect.x + tuning.rect.width + tuning_label_height;
+	keyboard_mapping.rect.y += tuning_label_height + tuning_spacing;
 	keyboard_mapping.layout();
 	error_box->rect = { margin, upper_top, contents_width, lower_top - upper_top };
 	if (file_chooser) {

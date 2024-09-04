@@ -28,7 +28,7 @@ OBJECTS_DIR := objects
 
 CFLAGS += -fPIC --no-exceptions --no-rtti -DTUNINGS_NO_EXCEPTIONS
 CFLAGS += -Wall
-LINK_FLAGS += -shared
+LINK_FLAGS += -shared -static-libstdc++
 
 -include Makefile.local
 

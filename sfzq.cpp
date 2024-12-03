@@ -9,6 +9,11 @@ static const std::vector<clap_plugin_descriptor_t> our_descriptors = {
 		.id = "net.stevefolta.sfzq",
 		.name = "SFZQ",
 		.vendor = "Steve Folta",
+		.url = "https://github.com/stevefolta/sfzq",
+		.manual_url = "",
+		.support_url = "",
+		.version = "1.0.0",
+		.description = "SFZ/SF2 sample player",
 		.features = (const char*[]) {
 			CLAP_PLUGIN_FEATURE_INSTRUMENT,
 			CLAP_PLUGIN_FEATURE_SAMPLER,

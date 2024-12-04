@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Get the two source directories needed.
+# This should perhaps be part of the Dockerfile.
+mkdir -p persistent
+if [ ! -d persistent/clap ]; then
+	cd persistent
+	git clone https://github.com/free-audio/clap.git
+	cd ..
+	fi
+if [ ! -d persistent/sfzq ]; then
+	cd persistent
+	git clone https://github.com/stevefolta/sfzq.git
+	# Set up Makefile.local.
+	echo "CFLAGS += -I/home/build/persistent/clap/include -Os" >> sfzq/Makefile.local
+	echo "LINK_FLAGS += -static-libstdc++" >> sfzq/Makefile.local
+	cd ..
+	fi
+
+
+docker build -f vendor/surge-synthesizer/Dockerfile --tag sfzq-build-ubuntu18:1 .
+

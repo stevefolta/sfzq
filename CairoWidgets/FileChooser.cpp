@@ -122,11 +122,8 @@ bool FileChooser::mouse_released(int x, int y)
 	if (accepted) {
 		if (released_widget == up_button)
 			go_up();
-		else if (released_widget == ok_button && ok_fn) {
-			auto name = file_list->selection_name();
-			if (!name.empty())
-				ok_fn(path + "/" + name);
-			}
+		else if (released_widget == ok_button)
+			enter_selected_entry();
 		else if (released_widget == cancel_button && cancel_fn)
 			cancel_fn();
 		}

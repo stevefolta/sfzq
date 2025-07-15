@@ -4,7 +4,7 @@
 #include "SFZSample.h"
 #include "SFZSynth.h"
 #include "SampleBuffer.h"
-#include "CLAPOutBuffer.h"
+#include "OutBuffer.h"
 #include "Decibels.h"
 #include "SFZFloat.h"
 #include "MIDINoteFrequency.h"

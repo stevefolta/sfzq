@@ -60,7 +60,7 @@ chooser comes up to choose a keyboard mapping, it will start in this directory.
 ### Tunings
 
 Alternate ("microtonal") tunings are supported in the Scala (".scl") file format (thanks to the 
-[Surge Tuning Library](https://surge-synth-team.org/tuning-library/)).
+[Surge Tuning Library](https://surge-synth-team.org/sst-libraries/)).
 
 
 ### Building
